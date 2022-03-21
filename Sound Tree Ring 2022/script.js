@@ -24,11 +24,8 @@ pointEnd.y = canvas.height/2;
 
 let angle = 0;
 let radius = 0;
-let angleRate = 0.005;   // rate of angle spin
-let radiusR
-
-
-ate = 0.01;   // rate of radius growth
+let angleRate = 0.002;   // rate of angle spin
+let radiusRate = 0.003;   // rate of radius growth
 
 
 // Set limit of the animation
@@ -53,13 +50,13 @@ let volume = audioContext.createGain();
 
 audioContext.resume();
 
-volume.gain.value = 1;   // adjust volume 
+volume.gain.value = 0.5;   // adjust volume 
 
 audioSource.connect(volume);
 volume.connect(analyser);
 analyser.connect(audioContext.destination);
 
-analyser.fftSize = 32;
+analyser.fftSize = 64;
 
 
 let bufferLength = analyser.fftSize;
