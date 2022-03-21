@@ -41,6 +41,7 @@ let lightness = 50;
 let audio1 = new Audio();
 audio1.src = 'SR001F_2.wav'; // name of the audio file (locally)
 
+let isPlaying = false;
 
 let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let audioSource = audioContext.createMediaElementSource(audio1);
@@ -48,7 +49,7 @@ let analyser = audioContext.createAnalyser();
 let volume = audioContext.createGain();
 
 
-audioContext.resume();
+
 
 volume.gain.value = 0.5;   // adjust volume 
 
@@ -84,24 +85,76 @@ function draw(){
 }
 
 // Play Button
+const buttonPlay = document.getElementById('buttonPlay');
 
-const button1 = document.getElementById('button1');
-
-button1.addEventListener('click',function(){
-    
-    
+buttonPlay.addEventListener('click',function(){
+    audioContext.resume();
+    isPlaying = true;
     audio1.play();
     animate();
+    buttonPlay.disabled = true;
+   
+    
+});
+
+
+// Clear Button
+const buttonClear = document.getElementById('buttonClear');
+
+buttonClear.addEventListener('click',function(){
+
+    clearCanvas();
+    
 
 });
 
+
+
+
+// Suspend/Resume Button
+const buttonSusRes = document.getElementById('buttonSusRes');
+
+buttonSusRes.addEventListener('click',function(){
+    if(audioContext.state === 'running') {
+        isPlaying = false;
+        audio1.pause(); 
+        audioContext.suspend().then(function() {      
+            buttonSusRes.textContent = 'Resume';
+        });
+      } else if(audioContext.state === 'suspended') {
+        isPlaying = true;
+        audio1.play();
+        audioContext.resume().then(function() {
+            buttonSusRes.textContent = 'Pause';
+        });
+    }
+    
+    animate();
+    
+});
+
+// Reset Button
+const buttonReset = document.getElementById('buttonReset');
+
+buttonReset.addEventListener('click', function(){
+    isPlaying = false; 
+    audioContext.suspend();
+    audio1.pause();
+    audio1.load();
+    clearCanvas();
+    buttonPlay.disabled = false;
+    buttonSusRes.textContent = 'Pause';
+    resetCanvas();
+});
+
+
 let offset = 0;
 
-function animate(){
+function animate(){ // animate 
     
     analyser.getByteTimeDomainData(dataArray);  
     
-    if(pointEnd.x < canvas.width){
+    if((pointEnd.x < canvas.width)&&(isPlaying === true)){
 
         for (let i = 0; i<bufferLength; i++){
             draw();
@@ -123,3 +176,19 @@ function animate(){
       
     requestAnimationFrame(animate);
 }
+
+function clearCanvas(){    // clear canvas
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+function resetCanvas(){
+    angle = 0;
+    radius = 0;
+
+    pointStart.x = canvas.width/2;
+    pointStart.y = canvas.height/2;
+
+    pointEnd.x = canvas.width/2;
+    pointEnd.y = canvas.height/2;
+}
+
