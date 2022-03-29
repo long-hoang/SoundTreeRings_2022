@@ -4,15 +4,38 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Milestone 1</title>
+    <title>SoundTreeRings</title>
     <link rel="stylesheet" href ="style.css">
 </head>
 <body>
-    <button id="buttonPlay">Play</button>
-    <button id="buttonClear">Clear</button>
-    <button id="buttonSusRes">Pause</button>
-    <button id="buttonReset">Reset</button>
+
+    <div id = "controlsLeft">
+        <select class = "dropdown" id = "trackLibrary">
+            <option value ="SR001F_2.wav">Track 1: SR001F_2</option>
+            <option value ="waves.mp3">Track 2: waves</option>
+            <option value ="animals.wav">Track 3: animals</option>
+            <option value ="nature.mp3">Track 4: nature</option>
+        </select>
+        <button class = "button" id="buttonPrev"> ❮ Previous</button>
+        <button class = "button" id="buttonNext">Next ❯ </button>
+        <div id = "trackTitle">Track Title</div>
+
+
+    </div>
+
+
+    <div id = "controlsRight">    
+        <button class = "button" id="buttonPlay">Play</button>
+        <button class = "button" id="buttonSusRes">  Pause  </button>
+        <button class = "button" id="buttonReset">Reset</button>
+    </div>
+
+
+
+
     <canvas id = "canvas1"></canvas>
+
+    
     
    
     <script src="script.js"></script>
