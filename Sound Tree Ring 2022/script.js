@@ -1,8 +1,50 @@
 
-const trackLibrary = document.getElementById('trackLibrary'); // drop-down selector
-var selectedTrack ;
-updateTrackTitle();
 
+// List of tracks and their data
+// duration in seconds 
+// time of recording based on hour (0 to 23), mapped to hue value (1 to 360), for background color
+// location = [latitude, longitude], for line color
+// longitude (-180 to +180) mapped to hue (1 to 360)
+// latitude (-90 to +90) mapped to saturation (1 to 100)
+var trackList = [
+    {trackID:"SR001F_2.wav", duration:16, timeOfRecording: 22, location: [33.812511,-117.918976] },
+    {trackID:"animals.wav", duration:44, timeOfRecording: 4, location: [66.160507,-153.369141]},
+    {trackID:"waves.mp3", duration:235,timeOfRecording: 10, location: [-33.865143,151.209900]},
+    {trackID:"nature.mp3", duration:59, timeOfRecording: 15, location: [90, 30]}
+];
+
+
+for (var track of trackList){
+
+    document.getElementById('trackLibraryDropdown').innerHTML+='<option value ='+track.trackID+'>'+track.trackID+'</option>';
+
+}
+
+
+
+// drop-down selector
+const trackLibraryDropdown = document.getElementById('trackLibraryDropdown'); 
+var selectedTrack ;
+updateTrack();
+
+
+
+// Background Color based on timeOfRecording
+const hueSlider = document.getElementById('hueSlider'); // hue slider (temporary)
+var hourRange = 24; // 0 - 23 
+var hueRange = 360; // 1 - 360
+var hueValue;
+
+// Line Drawing Color based on location
+var lineSaturation = latitudeToSaturation(trackList[0].location[0]);
+var lineHue = longitudeToHue(trackList[0].location[1]);
+
+
+document.getElementById("canvas1").style.backgroundColor = 'hsl('+timeToHue(parseInt(trackList[0].timeOfRecording))+',100%,50%)'; // update background based on first track on load in
+
+// Variable line thickness
+var decibelRange = 10;
+var lineWidth = 0.1;
 
 // Canvas API Settings & Parameters
 const canvas = document.getElementById('canvas1');
@@ -36,8 +78,6 @@ let radiusRate = 0.003;   // rate of radius growth
 let upperRandomLimit = 50;
 let lowerRandomLimit = -50;
 
-let hue = 1;
-let lightness = 50;
 
 // Web Audio API Settings & Parameters
 
@@ -74,26 +114,27 @@ let dataArray = new Uint8Array(bufferLength);
 ctx.globalAlpha = 1.0; // line transparency
 
 function draw(){
-    ctx.lineWidth = 1;  // line width
+    ctx.lineWidth = lineWidth;  // line width
     ctx.lineJoin = 'round';
-    //ctx.strokeStyle = 'hsl('+hue+',100%,'+lightness+'%)';  
-    ctx.strokeStyle = 'black';
+     
+    ctx.strokeStyle =  'hsl('+lineHue+','+ lineSaturation+'%,50%)'; // line stroke color
     ctx.beginPath();
     ctx.moveTo(pointStart.x, pointStart.y);    // point start
     ctx.lineTo(pointEnd.x, pointEnd.y);    // point end
     ctx.stroke();
     
+    
 }
 
 // Track Library Selection 
 
-trackLibrary.addEventListener("change",function(){
+trackLibraryDropdown.addEventListener("change",function(){
     resetAll();
-    selectedTrack = trackLibrary.options[trackLibrary.selectedIndex].value; // get selected value
+    selectedTrack = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex].value; // get selected value
     audio1.src = selectedTrack; // set new track
     document.getElementById("trackTitle").innerHTML = selectedTrack;
     prevNextButtonDisableCheck();
-
+    updateTrack();
 });
 
 // Previous & Next Buttons
@@ -102,10 +143,10 @@ const buttonPrev = document.getElementById('buttonPrev');
 
 buttonPrev.addEventListener('click',function(){
     resetAll();
-    audio1.src = trackLibrary.options[trackLibrary.selectedIndex-1].value;
-    trackLibrary.selectedIndex = trackLibrary.selectedIndex-1;
+    audio1.src = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex-1].value;
+    trackLibraryDropdown.selectedIndex = trackLibraryDropdown.selectedIndex-1;
     prevNextButtonDisableCheck();
-    updateTrackTitle();
+    updateTrack();
 });
 
 
@@ -113,10 +154,10 @@ const buttonNext = document.getElementById('buttonNext');
 
 buttonNext.addEventListener('click',function(){
     resetAll();
-    audio1.src = trackLibrary.options[trackLibrary.selectedIndex+1].value;
-    trackLibrary.selectedIndex = trackLibrary.selectedIndex+1;
+    audio1.src = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex+1].value;
+    trackLibraryDropdown.selectedIndex = trackLibraryDropdown.selectedIndex+1;
     prevNextButtonDisableCheck();
-    updateTrackTitle();
+    updateTrack();
 });
 
 prevNextButtonDisableCheck(); // for first instance 
@@ -179,8 +220,11 @@ function animate(){ // animate
     if((isPlaying === true)&&(audio1.ended===false)){
 
         for (let i = 0; i<bufferLength; i++){
-            draw();
+            
             offset = (dataArray[i]-128);
+
+            draw();
+            lineWidth = scaleLineThickness(offset); // controls the line thickness as function of Loudness
 
             radius += radiusRate;
             angle += angleRate;
@@ -234,24 +278,50 @@ function resetAll(){ // clears canvas drawing, reset track, buttons set to defau
 
 function prevNextButtonDisableCheck(){ // check if the track if is at edges, if true, disable next or prev buttons accordingly
     
-    if(trackLibrary.selectedIndex === 0){
+    if(trackLibraryDropdown.selectedIndex === 0){
         buttonPrev.disabled = true;
-    }else if(trackLibrary.selectedIndex !== 0){
+    }else if(trackLibraryDropdown.selectedIndex !== 0){
         buttonPrev.disabled = false;
     }
     
     
     
-    if(trackLibrary.selectedIndex !== trackLibrary.options.length-1){
+    if(trackLibraryDropdown.selectedIndex !== trackLibraryDropdown.options.length-1){
         buttonNext.disabled = false;
-    }else if(trackLibrary.selectedIndex === trackLibrary.options.length-1){
+    }else if(trackLibraryDropdown.selectedIndex === trackLibraryDropdown.options.length-1){
         buttonNext.disabled = true;
     }
 }
 
-function updateTrackTitle(){
-    selectedTrack = trackLibrary.options[trackLibrary.selectedIndex].value; // get selected value
-
+function updateTrack(){
+    hueValue = timeToHue(parseInt(trackList[trackLibraryDropdown.selectedIndex].timeOfRecording));
+    
+    selectedTrack = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex].value; // get selected value
+    
     document.getElementById("trackTitle").innerHTML = selectedTrack; // update title based on track 
+    
+    document.getElementById("canvas1").style.backgroundColor = 'hsl('+hueValue+',100%,50%)'; 
+
+    lineHue = longitudeToHue(trackList[trackLibraryDropdown.selectedIndex].location[1]);
+    lineSaturation = latitudeToSaturation(trackList[trackLibraryDropdown.selectedIndex].location[0]);
+ 
+
 
 }
+
+function timeToHue(hour){
+    return hueRange*((hour+1)/hourRange);
+}
+
+function scaleLineThickness(input){ // controls the line thickness as function of Loudness, takes debiels, makes fraction
+    return Math.abs(offset/decibelRange)+0.3; 
+}
+
+function longitudeToHue(longitude){ // convert longitude to hue value
+    return 180+longitude;
+}
+
+function latitudeToSaturation(latitude){ // convert latitude to saruation value
+    return 100*(90+latitude)/180;
+}
+

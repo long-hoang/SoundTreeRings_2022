@@ -10,18 +10,16 @@
 <body>
 
     <div id = "controlsLeft">
-        <select class = "dropdown" id = "trackLibrary">
-            <option value ="SR001F_2.wav">Track 1: SR001F_2</option>
-            <option value ="waves.mp3">Track 2: waves</option>
-            <option value ="animals.wav">Track 3: animals</option>
-            <option value ="nature.mp3">Track 4: nature</option>
+        <select class = "dropdown" id = "trackLibraryDropdown">
+            <!-- Javascript will populate this -->
         </select>
         <button class = "button" id="buttonPrev"> ❮ Previous</button>
         <button class = "button" id="buttonNext">Next ❯ </button>
-        <div id = "trackTitle">Track Title</div>
+        
 
 
     </div>
+
 
 
     <div id = "controlsRight">    
@@ -30,14 +28,15 @@
         <button class = "button" id="buttonReset">Reset</button>
     </div>
 
+    <div id = "trackTitle">Track Title</div>
 
 
+    <canvas id = "canvas1" ></canvas>
 
-    <canvas id = "canvas1"></canvas>
 
     
     
-   
+    
     <script src="script.js"></script>
 </body>
 </html>
