@@ -7,7 +7,7 @@
 // longitude (-180 to +180) mapped to hue (1 to 360)
 // latitude (-90 to +90) mapped to saturation (1 to 100)
 var trackList = [
-    {trackID:"SR001F_2.wav", duration:16, timeOfRecording: 22, location: [33.812511,-117.918976] },
+    {trackID:"SR001F_2.wav", duration:16, timeOfRecording: 0, location: [33.812511,-117.918976] },
     {trackID:"animals.wav", duration:44, timeOfRecording: 4, location: [66.160507,-153.369141]},
     {trackID:"waves.mp3", duration:235,timeOfRecording: 10, location: [-33.865143,151.209900]},
     {trackID:"nature.mp3", duration:59, timeOfRecording: 15, location: [90, 30]}
@@ -31,8 +31,8 @@ updateTrack();
 
 // Background Color based on timeOfRecording
 const hueSlider = document.getElementById('hueSlider'); // hue slider (temporary)
-var hourRange = 24; // 0 - 23 
-var hueRange = 360; // 1 - 360
+var hourRange = 23; // 0 - 23 
+var hueRange = 360; // 0 - 360
 var hueValue;
 
 // Line Drawing Color based on location
@@ -310,7 +310,7 @@ function updateTrack(){
 }
 
 function timeToHue(hour){
-    return hueRange*((hour+1)/hourRange);
+    return hueRange*((hour)/hourRange);
 }
 
 function scaleLineThickness(input){ // controls the line thickness as function of Loudness, takes debiels, makes fraction
