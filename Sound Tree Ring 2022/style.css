@@ -35,10 +35,15 @@ body    {
    
 }
 
-#trackTitle {
+#controlsMid {
+    position:absolute;
+    left: 40%;
+}
+
+#trackInfo {
     position: absolute;
     bottom: 1%;
-    left: 50%;
+    left: 2%;
     font-weight: bold;
     
 }

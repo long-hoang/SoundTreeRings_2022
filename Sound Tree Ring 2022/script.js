@@ -22,7 +22,7 @@ for (var track of trackList){
 
 
 
-// drop-down selector
+// Drop-down selector:
 const trackLibraryDropdown = document.getElementById('trackLibraryDropdown'); 
 var selectedTrack ;
 updateTrack();
@@ -46,7 +46,7 @@ document.getElementById("canvas1").style.backgroundColor = 'hsl('+timeToHue(pars
 var decibelRange = 10;
 var lineWidth = 0.1;
 
-// Canvas API Settings & Parameters
+// Canvas API Settings & Parameters:
 const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -66,21 +66,18 @@ pointEnd.x = canvas.width/2;
 pointEnd.y = canvas.height/2;
 
 
-
 let angle = 0;
 let radius = 0;
 let angleRate = 0.002;   // rate of angle spin
 let radiusRate = 0.003;   // rate of radius growth
 
 
-// Set limit of the animation
-
+// Set limit of the animation:
 let upperRandomLimit = 50;
 let lowerRandomLimit = -50;
 
 
-// Web Audio API Settings & Parameters
-
+// Web Audio API Settings & Parameters:
 let audio1 = new Audio();
 audio1.src = selectedTrack; // LOAD SOUND FILE
 
@@ -118,6 +115,11 @@ function draw(){
     ctx.lineJoin = 'round';
      
     ctx.strokeStyle =  'hsl('+lineHue+','+ lineSaturation+'%,50%)'; // line stroke color
+    
+    if (editorMode === true){
+        ctx.strokeStyle = lineEditorModeColor; // EDITOR MODE 
+    }
+    
     ctx.beginPath();
     ctx.moveTo(pointStart.x, pointStart.y);    // point start
     ctx.lineTo(pointEnd.x, pointEnd.y);    // point end
@@ -132,7 +134,6 @@ trackLibraryDropdown.addEventListener("change",function(){
     resetAll();
     selectedTrack = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex].value; // get selected value
     audio1.src = selectedTrack; // set new track
-    document.getElementById("trackTitle").innerHTML = selectedTrack;
     prevNextButtonDisableCheck();
     updateTrack();
 });
@@ -298,7 +299,10 @@ function updateTrack(){
     
     selectedTrack = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex].value; // get selected value
     
-    document.getElementById("trackTitle").innerHTML = selectedTrack; // update title based on track 
+    let latitude = trackList[trackLibraryDropdown.selectedIndex].location[0];
+    let longitude = trackList[trackLibraryDropdown.selectedIndex].location[1];
+
+    document.getElementById("trackInfo").innerHTML = selectedTrack + ", Latitude: " + latitude +", Longitude: " + longitude; // update title based on track 
     
     document.getElementById("canvas1").style.backgroundColor = 'hsl('+hueValue+',100%,50%)'; 
 
@@ -324,4 +328,28 @@ function longitudeToHue(longitude){ // convert longitude to hue value
 function latitudeToSaturation(latitude){ // convert latitude to saruation value
     return 100*(90+latitude)/180;
 }
+
+
+
+// Color Selectors for Background and Line (Testing Purposes Only):
+
+var colorEditorMode  = true; // CHANGE THIS FALSE IF COLOR PICKER IS NOT USED
+
+const backgroundPicker = document.getElementById('backgroundPicker');
+backgroundPicker.addEventListener("input", function(selected){
+    document.getElementById("canvas1").style.backgroundColor = selected.target.value; 
+
+});
+
+
+const linePicker = document.getElementById('linePicker');
+var lineEditorModeColor;
+var editorMode = true;
+
+linePicker.addEventListener("input", function(selected){
+  
+    lineEditorModeColor = selected.target.value;
+
+    
+});
 
