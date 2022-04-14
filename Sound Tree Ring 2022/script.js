@@ -299,7 +299,7 @@ buttonReset.addEventListener('click', function(){
 var trueDrawCounter = 1;
 
 function drawTrueLine(){
-    ctxTrueOverlay.lineWidth = 3;  // line width
+    ctxTrueOverlay.lineWidth = 1;  // line width
     ctxTrueOverlay.lineJoin = 'round';
      
     ctxTrueOverlay.strokeStyle =  'black'; 
@@ -463,8 +463,11 @@ function resetAll(){ // clears canvas drawing, reset track, buttons set to defau
     trueDrawCounter = 0;
     
     clearTrackProgress();
-
+    
     resetBarNeedle();
+
+    timeStamps = [];
+    tic = 0;
 }
 
 function prevNextButtonDisableCheck(){ // check if the track if is at edges, if true, disable next or prev buttons accordingly
