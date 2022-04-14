@@ -16,11 +16,13 @@
         <button class = "button" id="buttonPrev"> ❮ Previous</button>
         <button class = "button" id="buttonNext">Next ❯ </button>
         
+        
 
 
     </div>
     
     <div id = "controlsMid">
+        
         <div>
             <input type="color" id="backgroundPicker" name="backgroundPicker"
                    value="#FFFFFF">
@@ -30,6 +32,13 @@
                    value="#FFFFFF">
             <label for="linePicker">Line Color</label>
         </div>
+        
+        
+
+        
+
+        
+        
 
     </div>
 
@@ -42,9 +51,17 @@
 
     <div id = "trackInfo">Track Title</div>
 
-
+    <div id = "controlsBottom">
+        <div id = "trackBar">
+            <div id = "trackBarNeedle"></div>
+            <div id = "trackProgress"></div>
+        </div>
+    </div>
+   
+    <canvas id = "needleOverlay"></canvas>
+    <canvas id = "trueTrackOverlay"></canvas>
     <canvas id = "canvas1" ></canvas>
-
+    
 
     
     

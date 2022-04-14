@@ -1,5 +1,61 @@
 
 
+var trackProgressRect; // rect for progress of track
+var trackBarRect = document.getElementById('trackBar').getBoundingClientRect(); // rect for just the entire bar
+
+// Get coordinate of Mouse
+var inTrackProgressArea = false;
+
+var mouseX;
+var mouseY;
+
+var barNeedleOffset;
+var barNeedlePercentage; // percent of needle on bar which can be moved
+document.addEventListener("mousemove", function(event){
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+    
+    clearNeedleCanvas();
+
+    if (inTrackProgressArea ===true){
+        
+        barNeedleOffset = event.offsetX;
+        
+        updateBarNeedle();
+        barNeedlePercentage = 100*(event.offsetX)/trackBarRect.width;
+        
+        document.getElementById('trueTrackOverlay').style.opacity = 90+"%";
+        needleLinearToRadial();
+
+        drawTrueNeedle();
+
+        
+    } else {
+        document.getElementById('trueTrackOverlay').style.opacity = 0+"%";
+        clearNeedleCanvas();
+    }
+
+
+
+});
+
+
+// Interaction with tracker bar:
+
+
+document.getElementById("trackProgress").addEventListener("mouseover", function(event){
+    document.getElementById("trackProgress").style.backgroundColor = "#f7f7f7";
+    inTrackProgressArea = true;
+
+});
+
+document.getElementById("trackProgress").addEventListener("mouseout", function(){
+    document.getElementById("trackProgress").style.backgroundColor = "#E7E7E7";
+    inTrackProgressArea = false;
+});
+
+
+
 // List of tracks and their data
 // duration in seconds 
 // time of recording based on hour (0 to 23), mapped to hue value (1 to 360), for background color
@@ -20,6 +76,7 @@ for (var track of trackList){
 
 }
 
+var timeStamps = []; // for interactive tracking purposes
 
 
 // Drop-down selector:
@@ -47,30 +104,59 @@ var decibelRange = 10;
 var lineWidth = 0.1;
 
 // Canvas API Settings & Parameters:
+// Main Layer
 const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// Overlay Layer for Needle
+const canvasNeedleOverlay = document.getElementById('needleOverlay');
+const ctxNeedleOverlay = canvasNeedleOverlay.getContext('2d');
+canvasNeedleOverlay.width = canvas.width;
+canvasNeedleOverlay.height = canvas.height;
+
+// Overlay Layer for True Track Spiral 
+const canvasTrueOverlay = document.getElementById('trueTrackOverlay');
+const ctxTrueOverlay = canvasTrueOverlay.getContext('2d');
+canvasTrueOverlay.width = canvas.width;
+canvasTrueOverlay.height = canvas.height;
+
 // note: origin starts at top left corner of canvas
 // +X = going right, +Y = going down
 
 
-let pointStart = new Object();
+// Line Points (includes offsets): 
+const pointStart = new Object();
 pointStart.x = canvas.width/2;
 pointStart.y = canvas.height/2;
 
 
-let pointEnd = new Object();
+const pointEnd = new Object();
 pointEnd.x = canvas.width/2;
 pointEnd.y = canvas.height/2;
+
+
+// True Line Points:
+const truePointStart = new Object();
+truePointStart.x = canvas.width/2;
+truePointStart.y = canvas.height/2;
+
+
+const truePointEnd = new Object();
+truePointEnd.x = canvas.width/2;
+truePointEnd.y = canvas.height/2;
+
+// True line Point list(keep track of all points drawn):
+var truePoints = [];    // for drawing purposes only
+truePoints[0] = truePointStart;
 
 
 let angle = 0;
 let radius = 0;
 let angleRate = 0.002;   // rate of angle spin
 let radiusRate = 0.003;   // rate of radius growth
-
+let offset = 0; 
 
 // Set limit of the animation:
 let upperRandomLimit = 50;
@@ -81,6 +167,8 @@ let lowerRandomLimit = -50;
 let audio1 = new Audio();
 audio1.src = selectedTrack; // LOAD SOUND FILE
 
+
+
 let isPlaying = false;
 
 let audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -89,6 +177,8 @@ let analyser = audioContext.createAnalyser();
 let volume = audioContext.createGain();
 
 
+var time = 0; // time variable, used for storing points
+var audioDuration; // total duration of track
 
 volume.gain.value = 0.5;   // adjust volume 
 
@@ -110,23 +200,8 @@ let dataArray = new Uint8Array(bufferLength);
 
 ctx.globalAlpha = 1.0; // line transparency
 
-function draw(){
-    ctx.lineWidth = lineWidth;  // line width
-    ctx.lineJoin = 'round';
-     
-    ctx.strokeStyle =  'hsl('+lineHue+','+ lineSaturation+'%,50%)'; // line stroke color
-    
-    if (editorMode === true){
-        ctx.strokeStyle = lineEditorModeColor; // EDITOR MODE 
-    }
-    
-    ctx.beginPath();
-    ctx.moveTo(pointStart.x, pointStart.y);    // point start
-    ctx.lineTo(pointEnd.x, pointEnd.y);    // point end
-    ctx.stroke();
-    
-    
-}
+
+
 
 // Track Library Selection 
 
@@ -134,6 +209,7 @@ trackLibraryDropdown.addEventListener("change",function(){
     resetAll();
     selectedTrack = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex].value; // get selected value
     audio1.src = selectedTrack; // set new track
+   
     prevNextButtonDisableCheck();
     updateTrack();
 });
@@ -145,6 +221,7 @@ const buttonPrev = document.getElementById('buttonPrev');
 buttonPrev.addEventListener('click',function(){
     resetAll();
     audio1.src = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex-1].value;
+    
     trackLibraryDropdown.selectedIndex = trackLibraryDropdown.selectedIndex-1;
     prevNextButtonDisableCheck();
     updateTrack();
@@ -156,6 +233,7 @@ const buttonNext = document.getElementById('buttonNext');
 buttonNext.addEventListener('click',function(){
     resetAll();
     audio1.src = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex+1].value;
+   
     trackLibraryDropdown.selectedIndex = trackLibraryDropdown.selectedIndex+1;
     prevNextButtonDisableCheck();
     updateTrack();
@@ -166,6 +244,9 @@ prevNextButtonDisableCheck(); // for first instance
 // Play Button
 const buttonPlay = document.getElementById('buttonPlay');
 
+
+
+
 buttonPlay.addEventListener('click',function(){
     analyser.getByteTimeDomainData(dataArray);  
     audioContext.resume();
@@ -174,6 +255,9 @@ buttonPlay.addEventListener('click',function(){
     animate();
     buttonPlay.disabled = true;
     buttonSusRes.disabled = false;
+    audioDuration = audio1.duration;
+    
+    
 });
 
 
@@ -211,44 +295,136 @@ buttonReset.addEventListener('click', function(){
     resetAll();
 });
 
+// Draw True Line Spiral:
+var trueDrawCounter = 1;
 
-let offset = 0;
+function drawTrueLine(){
+    ctxTrueOverlay.lineWidth = 3;  // line width
+    ctxTrueOverlay.lineJoin = 'round';
+     
+    ctxTrueOverlay.strokeStyle =  'black'; 
+    
+    
+    ctxTrueOverlay.beginPath();
+    ctxTrueOverlay.moveTo(truePointStart.x, truePointStart.y);    // point start
+    ctxTrueOverlay.lineTo(truePointEnd.x, truePointEnd.y);    // point end
+    ctxTrueOverlay.stroke();
+    
+    
+}
 
-function animate(){ // animate 
+// Draw: 
+function draw(){
+    ctx.lineWidth = lineWidth;  // line width
+    ctx.lineJoin = 'round';
+     
+    ctx.strokeStyle =  'hsl('+lineHue+','+ lineSaturation+'%,50%)'; // line stroke color
+    
+    if (editorMode === true){
+        ctx.strokeStyle = lineEditorModeColor; // EDITOR MODE 
+    }
+    
+    ctx.beginPath();
+    ctx.moveTo(pointStart.x, pointStart.y);    // point start
+    ctx.lineTo(pointEnd.x, pointEnd.y);    // point end
+    ctx.stroke();
+    
+    
+}
+
+// Draw Needle:
+
+var needleTrueX = 400;
+var needleTrueY = 400;
+
+function drawTrueNeedle(){
+
+
+    ctxNeedleOverlay.beginPath()
+    ctxNeedleOverlay.arc(needleTrueX,needleTrueY,5, 0, Math.PI*2);
+    ctxNeedleOverlay.closePath();
+    ctxNeedleOverlay.fill();
+    ctxNeedleOverlay.stroke();
+
+}
+
+
+var tic = 0;
+
+// Animate:
+function animate(){ 
     
     analyser.getByteTimeDomainData(dataArray);  
     
+
     if((isPlaying === true)&&(audio1.ended===false)){
+        
+        time = audio1.currentTime;
+        timeStamps[tic] = {t: time, xCoord:truePointStart.x, yCoord: truePointStart.y, trackPercent: trackPercentProgress };
+        tic++;
+    
+        updateTrackProgress();
+
 
         for (let i = 0; i<bufferLength; i++){
             
             offset = (dataArray[i]-128);
 
             draw();
+            drawTrueLine();
+
+            
             lineWidth = scaleLineThickness(offset); // controls the line thickness as function of Loudness
 
             radius += radiusRate;
             angle += angleRate;
-        
+
+
+            
+            // line with loudness offsets
             pointStart.x = pointEnd.x;
             pointStart.y = pointEnd.y;
     
             pointEnd.x = (radius+offset)*Math.sin(angle) + canvas.width/2;
             pointEnd.y = (radius+offset)*Math.cos(angle) + canvas.height/2;
+
+            // true line points
+            truePointStart.x = truePointEnd.x;
+            truePointStart.y = truePointEnd.y;
+
+            truePointEnd.x = (radius)*Math.sin(angle) + canvas.width/2;
+            truePointEnd.y = (radius)*Math.cos(angle) + canvas.height/2;
+
         }
+        
 
     } else if (audio1.ended===true){
         buttonSusRes.disabled = true;
     } else {
         return;
     }
-
+    
     requestAnimationFrame(animate);
 }
 
+
+// Clear Functions for each Canvas Layer:
 function clearCanvas(){    // clear canvas drawings
     ctx.clearRect(0,0,canvas.width,canvas.height);
+    clearNeedleCanvas();
+    clearTrueCanvas();
+    
 }
+
+function clearNeedleCanvas(){
+    ctxNeedleOverlay.clearRect(0,0,canvas.width,canvas.height);
+}
+
+function clearTrueCanvas(){
+    ctxTrueOverlay.clearRect(0,0,canvas.width,canvas.height);
+}
+
+
 
 function resetDrawPoint(){ // reset drawing to center of canvas
     angle = 0;
@@ -259,6 +435,15 @@ function resetDrawPoint(){ // reset drawing to center of canvas
 
     pointEnd.x = canvas.width/2;
     pointEnd.y = canvas.height/2;
+
+
+
+    // True point reset
+    truePointStart.x = canvas.width/2;
+    truePointStart.y = canvas.height/2;
+
+    truePointEnd.x = canvas.width/2;
+    truePointEnd.y = canvas.height/2;
 }
 
 function resetAll(){ // clears canvas drawing, reset track, buttons set to default
@@ -274,7 +459,12 @@ function resetAll(){ // clears canvas drawing, reset track, buttons set to defau
     buttonSusRes.disabled = true;
     resetDrawPoint();
     audio1.load();
+
+    trueDrawCounter = 0;
     
+    clearTrackProgress();
+
+    resetBarNeedle();
 }
 
 function prevNextButtonDisableCheck(){ // check if the track if is at edges, if true, disable next or prev buttons accordingly
@@ -308,8 +498,9 @@ function updateTrack(){
 
     lineHue = longitudeToHue(trackList[trackLibraryDropdown.selectedIndex].location[1]);
     lineSaturation = latitudeToSaturation(trackList[trackLibraryDropdown.selectedIndex].location[0]);
- 
 
+    
+    
 
 }
 
@@ -350,6 +541,55 @@ linePicker.addEventListener("input", function(selected){
   
     lineEditorModeColor = selected.target.value;
 
-    
 });
 
+
+
+
+
+
+var indexOfTruth = 0;
+
+
+
+
+// Progress Bar Tracker: 
+
+var trackPercentProgress; // real time update based on audio progress 
+
+function updateTrackProgress(){ // update styling 
+    trackPercentProgress = (audio1.currentTime/audioDuration)*100 ;
+    
+    document.getElementById("trackProgress").style.width = trackPercentProgress+ "%";
+    trackProgressRect = document.getElementById('trackProgress').getBoundingClientRect();
+    
+    
+}
+
+function clearTrackProgress(){
+    trackPercentProgress = 0;
+    document.getElementById("trackProgress").style.width = trackPercentProgress+ "%";
+}
+
+function updateBarNeedle(){
+    document.getElementById('trackBarNeedle').style.left = barNeedleOffset + "px";
+}
+
+function resetBarNeedle(){
+    barNeedleOffset = 0;
+    updateBarNeedle();
+}
+
+function needleLinearToRadial(){ // finds the location of the desired seek from linear to radial
+    for(var item of timeStamps){
+        
+        
+        if(item.trackPercent>=barNeedlePercentage){
+            needleTrueX = item.xCoord;
+            needleTrueY = item.yCoord;
+            
+            break;
+        }
+    }
+
+}
