@@ -608,6 +608,7 @@ const contrastCirclePicker = document.getElementById('contrastCirclePicker');
 contrastCirclePicker.addEventListener("input", function(selected){
   
     contrastCircleColor = selected.target.value;
+    drawContrastCircle();
 
 });
 
