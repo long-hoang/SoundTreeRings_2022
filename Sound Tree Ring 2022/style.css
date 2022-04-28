@@ -16,6 +16,17 @@ body    {
     z-index: 1;
 }
 
+#canvasSpiral {
+    position: absolute;
+    top: 5%;
+    left: 2%;
+    width: 95%;
+    height:90%;
+    border-radius: 10px;
+    z-index: 2;
+
+}
+
 #needleOverlay {
     
     position: absolute;
@@ -23,7 +34,7 @@ body    {
     left: 2%;
     width: 95%;
     height:90%;
-    z-index:2;
+    z-index:3;
     opacity: 100%;
 }
 
@@ -34,7 +45,7 @@ body    {
     left: 2%;
     width: 95%;
     height:90%;
-    z-index:3;
+    z-index:4;
     opacity: 50%;
 }
 

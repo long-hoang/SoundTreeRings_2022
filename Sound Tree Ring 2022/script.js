@@ -1,3 +1,27 @@
+// Canvas API Settings & Parameters:
+// First Layer, expanding contrasting circle layer
+const canvas = document.getElementById('canvas1');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Overlay Layer for Needle
+const canvasNeedleOverlay = document.getElementById('needleOverlay');
+const ctxNeedleOverlay = canvasNeedleOverlay.getContext('2d');
+canvasNeedleOverlay.width = canvas.width;
+canvasNeedleOverlay.height = canvas.height;
+
+// Overlay Layer for True Track Spiral 
+const canvasTrueOverlay = document.getElementById('trueTrackOverlay');
+const ctxTrueOverlay = canvasTrueOverlay.getContext('2d');
+canvasTrueOverlay.width = canvas.width;
+canvasTrueOverlay.height = canvas.height;
+
+//  Layer to draw Spiral of sound
+const canvasSpiral = document.getElementById('canvasSpiral');
+const ctxSpiral = canvasSpiral.getContext('2d');
+canvasSpiral.width = window.innerWidth;
+canvasSpiral.height = window.innerHeight;
 
 
 var trackProgressRect; // rect for progress of track
@@ -57,16 +81,19 @@ document.getElementById("trackProgress").addEventListener("mouseout", function()
 
 
 // List of tracks and their data
-// duration in seconds 
 // time of recording based on hour (0 to 23), mapped to hue value (1 to 360), for background color
 // location = [latitude, longitude], for line color
 // longitude (-180 to +180) mapped to hue (1 to 360)
 // latitude (-90 to +90) mapped to saturation (1 to 100)
 var trackList = [
-    {trackID:"SR001F_2.wav", duration:16, timeOfRecording: 0, location: [33.812511,-117.918976] },
-    {trackID:"animals.wav", duration:44, timeOfRecording: 4, location: [66.160507,-153.369141]},
-    {trackID:"waves.mp3", duration:235,timeOfRecording: 10, location: [-33.865143,151.209900]},
-    {trackID:"nature.mp3", duration:59, timeOfRecording: 15, location: [90, 30]}
+    {trackID:"SR001F_2.wav", timeOfRecording: '00:00:00', location: [33.812511,-117.918976] },
+    {trackID:"animals.wav", timeOfRecording: '06:00:00', location: [66.160507,-153.369141]},
+    {trackID:"waves.mp3",timeOfRecording: '10:00:00', location: [-33.865143,151.209900]},
+    {trackID:"nature.mp3", timeOfRecording: '12:00:00', location: [90, 100]},
+    {trackID:"dawn-early.mp3", timeOfRecording: '06:00:00', location: [90, 30]},
+    {trackID:"daytime.mp3", timeOfRecording: '09:00:00', location: [-20, 30]},
+    {trackID:"lateafternoon.mp3", timeOfRecording: '19:00:00', location: [90, 50]},
+    {trackID:"nighttime.mp3", timeOfRecording: '22:00:00', location: [50, 30]}
 ];
 
 
@@ -87,40 +114,27 @@ updateTrack();
 
 
 // Background Color based on timeOfRecording
-const hueSlider = document.getElementById('hueSlider'); // hue slider (temporary)
 var hourRange = 23; // 0 - 23 
 var hueRange = 360; // 0 - 360
-var hueValue;
+
+
 
 // Line Drawing Color based on location
 var lineSaturation = latitudeToSaturation(trackList[0].location[0]);
 var lineHue = longitudeToHue(trackList[0].location[1]);
 
 
-document.getElementById("canvas1").style.backgroundColor = 'hsl('+timeToHue(parseInt(trackList[0].timeOfRecording))+',100%,50%)'; // update background based on first track on load in
+// Background Color based on time
+// update background based on first track on load in
+document.getElementById("canvas1").style.backgroundColor = timeToBackgroundColor(trackList[0].timeOfRecording); 
+
 
 // Variable line thickness
-var decibelRange = 10;
-var lineWidth = 0.1;
+var decibelRange = 4; // make lower for thicker lines at higher loudness
+var lineWidth;
 
-// Canvas API Settings & Parameters:
-// Main Layer
-const canvas = document.getElementById('canvas1');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
 
-// Overlay Layer for Needle
-const canvasNeedleOverlay = document.getElementById('needleOverlay');
-const ctxNeedleOverlay = canvasNeedleOverlay.getContext('2d');
-canvasNeedleOverlay.width = canvas.width;
-canvasNeedleOverlay.height = canvas.height;
 
-// Overlay Layer for True Track Spiral 
-const canvasTrueOverlay = document.getElementById('trueTrackOverlay');
-const ctxTrueOverlay = canvasTrueOverlay.getContext('2d');
-canvasTrueOverlay.width = canvas.width;
-canvasTrueOverlay.height = canvas.height;
 
 // note: origin starts at top left corner of canvas
 // +X = going right, +Y = going down
@@ -198,7 +212,7 @@ let dataArray = new Uint8Array(bufferLength);
 
 
 
-ctx.globalAlpha = 1.0; // line transparency
+ctxSpiral.globalAlpha = 1.0; // Spiral line transparency
 
 
 
@@ -212,6 +226,7 @@ trackLibraryDropdown.addEventListener("change",function(){
    
     prevNextButtonDisableCheck();
     updateTrack();
+    
 });
 
 // Previous & Next Buttons
@@ -313,21 +328,21 @@ function drawTrueLine(){
     
 }
 
-// Draw: 
+// Draw Spiral: 
 function draw(){
-    ctx.lineWidth = lineWidth;  // line width
-    ctx.lineJoin = 'round';
+    ctxSpiral.lineWidth = lineWidth;  // line width
+    ctxSpiral.lineJoin = 'round';
      
-    ctx.strokeStyle =  'hsl('+lineHue+','+ lineSaturation+'%,50%)'; // line stroke color
+    ctxSpiral.strokeStyle =  'hsl('+lineHue+','+ lineSaturation+'%,50%)'; // line stroke color
     
     if (editorMode === true){
-        ctx.strokeStyle = lineEditorModeColor; // EDITOR MODE 
+        ctxSpiral.strokeStyle = lineEditorModeColor; // EDITOR MODE 
     }
     
-    ctx.beginPath();
-    ctx.moveTo(pointStart.x, pointStart.y);    // point start
-    ctx.lineTo(pointEnd.x, pointEnd.y);    // point end
-    ctx.stroke();
+    ctxSpiral.beginPath();
+    ctxSpiral.moveTo(pointStart.x, pointStart.y);    // point start
+    ctxSpiral.lineTo(pointEnd.x, pointEnd.y);    // point end
+    ctxSpiral.stroke();
     
     
 }
@@ -345,6 +360,27 @@ function drawTrueNeedle(){
     ctxNeedleOverlay.closePath();
     ctxNeedleOverlay.fill();
     ctxNeedleOverlay.stroke();
+
+}
+
+// Draw Contrasting Background Cirle:
+
+
+function drawContrastCircle(){
+
+    ctx.beginPath()
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'white';
+    if (editorMode === true){
+        ctx.fillStyle = contrastCircleColor;
+        ctx.strokeStyle = contrastCircleColor;
+    }
+    
+    // ctx.arc(canvas.width/2,canvas.height/2,radius*1.2, 0, Math.PI*2);
+    ctx.arc(canvas.width/2,canvas.height/2,400, 0, Math.PI*2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
 
 }
 
@@ -369,12 +405,17 @@ function animate(){
         for (let i = 0; i<bufferLength; i++){
             
             offset = (dataArray[i]-128);
+            
+            
+            lineWidth = scaleLineThickness(offset); // controls the line thickness as function of Loudness
 
             draw();
             drawTrueLine();
+            drawContrastCircle();
+            
 
             
-            lineWidth = scaleLineThickness(offset); // controls the line thickness as function of Loudness
+            
 
             radius += radiusRate;
             angle += angleRate;
@@ -410,9 +451,10 @@ function animate(){
 
 // Clear Functions for each Canvas Layer:
 function clearCanvas(){    // clear canvas drawings
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctxSpiral.clearRect(0,0,canvas.width,canvas.height);
     clearNeedleCanvas();
     clearTrueCanvas();
+    //clearContrastCircle();
     
 }
 
@@ -424,6 +466,9 @@ function clearTrueCanvas(){
     ctxTrueOverlay.clearRect(0,0,canvas.width,canvas.height);
 }
 
+function clearContrastCircle(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+}
 
 
 function resetDrawPoint(){ // reset drawing to center of canvas
@@ -466,6 +511,8 @@ function resetAll(){ // clears canvas drawing, reset track, buttons set to defau
     
     resetBarNeedle();
 
+    
+
     timeStamps = [];
     tic = 0;
 }
@@ -488,8 +535,8 @@ function prevNextButtonDisableCheck(){ // check if the track if is at edges, if 
 }
 
 function updateTrack(){
-    hueValue = timeToHue(parseInt(trackList[trackLibraryDropdown.selectedIndex].timeOfRecording));
-    
+    drawContrastCircle(); // draw contrast circle upon update
+
     selectedTrack = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex].value; // get selected value
     
     let latitude = trackList[trackLibraryDropdown.selectedIndex].location[0];
@@ -497,7 +544,7 @@ function updateTrack(){
 
     document.getElementById("trackInfo").innerHTML = selectedTrack + ", Latitude: " + latitude +", Longitude: " + longitude; // update title based on track 
     
-    document.getElementById("canvas1").style.backgroundColor = 'hsl('+hueValue+',100%,50%)'; 
+    document.getElementById("canvas1").style.backgroundColor = timeToBackgroundColor(trackList[trackLibraryDropdown.selectedIndex].timeOfRecording); 
 
     lineHue = longitudeToHue(trackList[trackLibraryDropdown.selectedIndex].location[1]);
     lineSaturation = latitudeToSaturation(trackList[trackLibraryDropdown.selectedIndex].location[0]);
@@ -507,12 +554,22 @@ function updateTrack(){
 
 }
 
-function timeToHue(hour){
-    return hueRange*((hour)/hourRange);
+function timeToBackgroundColor(timeOfRec){
+    let mycolor = 'RGB(255,255,255)'; // default white color
+    if((timeOfRec>='06:00:00')&&(timeOfRec<='07:59:00')){
+        mycolor = 'RGB(235,234,234)'; // 6am - 7:59 am (dawn early morning)
+    } else if((timeOfRec>='18:01:00')&&(timeOfRec<='19:59:00')){
+        mycolor = 'RGB(62,60,61)';    // 6:01pm - 7:59pm (late afternoon-early evening)
+    } else if(((timeOfRec>='20:00:00')&&(timeOfRec<='23:59:00'))||((timeOfRec>='00:00:00')&&(timeOfRec<='05:59:00'))){
+        mycolor = 'RGB(0,0,0)';   // 8pm - 5:59 am (nighttime)
+    }
+
+    return mycolor;
 }
 
+
 function scaleLineThickness(input){ // controls the line thickness as function of Loudness, takes debiels, makes fraction
-    return Math.abs(offset/decibelRange)+0.3; 
+    return Math.abs(offset/decibelRange)+1; 
 }
 
 function longitudeToHue(longitude){ // convert longitude to hue value
@@ -546,7 +603,13 @@ linePicker.addEventListener("input", function(selected){
 
 });
 
+var contrastCircleColor;
+const contrastCirclePicker = document.getElementById('contrastCirclePicker');
+contrastCirclePicker.addEventListener("input", function(selected){
+  
+    contrastCircleColor = selected.target.value;
 
+});
 
 
 
