@@ -1,3 +1,7 @@
+
+
+
+
 // Canvas API Settings & Parameters:
 // First Layer, expanding contrasting circle layer
 const canvas = document.getElementById('canvas1');
@@ -92,7 +96,7 @@ var trackList = [
     {trackID:"nature.mp3", timeOfRecording: '12:00:00', location: [90, 100]},
     {trackID:"dawn-early.mp3", timeOfRecording: '06:00:00', location: [90, 30]},
     {trackID:"daytime.mp3", timeOfRecording: '09:00:00', location: [-20, 30]},
-    {trackID:"lateafternoon.mp3", timeOfRecording: '19:00:00', location: [90, 50]},
+    {trackID:"lateafternoon.mp3", timeOfRecording: '19:00:00', location: [33.812511,-117.918976]},
     {trackID:"nighttime.mp3", timeOfRecording: '22:00:00', location: [50, 30]}
 ];
 
@@ -122,6 +126,8 @@ var hueRange = 360; // 0 - 360
 // Line Drawing Color based on location
 var lineSaturation = latitudeToSaturation(trackList[0].location[0]);
 var lineHue = longitudeToHue(trackList[0].location[1]);
+var defaultLineHue = lineHue;
+var lineLightness = 50; // default to White 
 
 
 // Background Color based on time
@@ -333,7 +339,7 @@ function draw(){
     ctxSpiral.lineWidth = lineWidth;  // line width
     ctxSpiral.lineJoin = 'round';
      
-    ctxSpiral.strokeStyle =  'hsl('+lineHue+','+ lineSaturation+'%,50%)'; // line stroke color
+    ctxSpiral.strokeStyle =  'hsl('+lineHue+','+ lineSaturation+'%,'+lineLightness+'%)'; // line stroke color, default 100% Lightness
     
     if (editorMode === true){
         ctxSpiral.strokeStyle = lineEditorModeColor; // EDITOR MODE 
@@ -356,7 +362,7 @@ function drawTrueNeedle(){
 
 
     ctxNeedleOverlay.beginPath()
-    ctxNeedleOverlay.arc(needleTrueX,needleTrueY,5, 0, Math.PI*2);
+    ctxNeedleOverlay.arc(pointStart.x, pointStart.y,5, 0, Math.PI*2);
     ctxNeedleOverlay.closePath();
     ctxNeedleOverlay.fill();
     ctxNeedleOverlay.stroke();
@@ -369,18 +375,21 @@ function drawTrueNeedle(){
 function drawContrastCircle(){
 
     ctx.beginPath()
-    ctx.fillStyle = 'white';
-    ctx.strokeStyle = 'white';
+    ctx.fillStyle = '#e6e6e6';
+    ctx.strokeStyle = '#e6e6e6';
+    
     if (editorMode === true){
         ctx.fillStyle = contrastCircleColor;
         ctx.strokeStyle = contrastCircleColor;
     }
-    
-    // ctx.arc(canvas.width/2,canvas.height/2,radius*1.2, 0, Math.PI*2);
-    ctx.arc(canvas.width/2,canvas.height/2,400, 0, Math.PI*2);
+
+    ctx.arc(pointStart.x, pointStart.y,15, 0, Math.PI*2);
     ctx.closePath();
     ctx.fill();
-    ctx.stroke();
+    ctx.stroke(); 
+    
+
+
 
 }
 
@@ -408,6 +417,7 @@ function animate(){
             
             
             lineWidth = scaleLineThickness(offset); // controls the line thickness as function of Loudness
+            lineHue = scaleLineColorDecibel(offset); // controls the line lightness as function of Loudness
 
             draw();
             drawTrueLine();
@@ -454,7 +464,7 @@ function clearCanvas(){    // clear canvas drawings
     ctxSpiral.clearRect(0,0,canvas.width,canvas.height);
     clearNeedleCanvas();
     clearTrueCanvas();
-    //clearContrastCircle();
+    clearContrastCircle();
     
 }
 
@@ -535,7 +545,7 @@ function prevNextButtonDisableCheck(){ // check if the track if is at edges, if 
 }
 
 function updateTrack(){
-    drawContrastCircle(); // draw contrast circle upon update
+    
 
     selectedTrack = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex].value; // get selected value
     
@@ -547,6 +557,7 @@ function updateTrack(){
     document.getElementById("canvas1").style.backgroundColor = timeToBackgroundColor(trackList[trackLibraryDropdown.selectedIndex].timeOfRecording); 
 
     lineHue = longitudeToHue(trackList[trackLibraryDropdown.selectedIndex].location[1]);
+    defaultLineHue = lineHue;
     lineSaturation = latitudeToSaturation(trackList[trackLibraryDropdown.selectedIndex].location[0]);
 
     
@@ -570,6 +581,15 @@ function timeToBackgroundColor(timeOfRec){
 
 function scaleLineThickness(input){ // controls the line thickness as function of Loudness, takes debiels, makes fraction
     return Math.abs(offset/decibelRange)+1; 
+}
+
+function scaleLineColorDecibel(input){ // controls the line color based on loudness
+    let colorDelta =   Math.abs(offset/decibelRange)*100;
+    if (colorDelta>=100){
+        return defaultLineHue + 100;
+    }
+    return defaultLineHue + colorDelta;
+
 }
 
 function longitudeToHue(longitude){ // convert longitude to hue value
@@ -660,3 +680,5 @@ function needleLinearToRadial(){ // finds the location of the desired seek from 
     }
 
 }
+
+
