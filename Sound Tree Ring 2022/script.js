@@ -1,94 +1,9 @@
+/* 1). LOAD TRACK LIST INFORMATION */
+// Note1: To add a new audio track, move the audio file into the root file of the application and insert 
+// manually the TrackID, timeOfRecording, and location information into trackList list below
+// Note2: Location determines line base color, "loudness" determines the thickness and color variation during play
+// Note3: Time of Recording determines background color 
 
-
-
-
-// Canvas API Settings & Parameters:
-// First Layer, expanding contrasting circle layer
-const canvas = document.getElementById('canvas1');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-// Overlay Layer for Needle
-const canvasNeedleOverlay = document.getElementById('needleOverlay');
-const ctxNeedleOverlay = canvasNeedleOverlay.getContext('2d');
-canvasNeedleOverlay.width = canvas.width;
-canvasNeedleOverlay.height = canvas.height;
-
-// Overlay Layer for True Track Spiral 
-const canvasTrueOverlay = document.getElementById('trueTrackOverlay');
-const ctxTrueOverlay = canvasTrueOverlay.getContext('2d');
-canvasTrueOverlay.width = canvas.width;
-canvasTrueOverlay.height = canvas.height;
-
-//  Layer to draw Spiral of sound
-const canvasSpiral = document.getElementById('canvasSpiral');
-const ctxSpiral = canvasSpiral.getContext('2d');
-canvasSpiral.width = window.innerWidth;
-canvasSpiral.height = window.innerHeight;
-
-
-var trackProgressRect; // rect for progress of track
-var trackBarRect = document.getElementById('trackBar').getBoundingClientRect(); // rect for just the entire bar
-
-// Get coordinate of Mouse
-var inTrackProgressArea = false;
-
-var mouseX;
-var mouseY;
-
-var barNeedleOffset;
-var barNeedlePercentage; // percent of needle on bar which can be moved
-document.addEventListener("mousemove", function(event){
-    mouseX = event.clientX;
-    mouseY = event.clientY;
-    
-    clearNeedleCanvas();
-
-    if (inTrackProgressArea ===true){
-        
-        barNeedleOffset = event.offsetX;
-        
-        updateBarNeedle();
-        barNeedlePercentage = 100*(event.offsetX)/trackBarRect.width;
-        
-        document.getElementById('trueTrackOverlay').style.opacity = 90+"%";
-        needleLinearToRadial();
-
-        drawTrueNeedle();
-
-        
-    } else {
-        document.getElementById('trueTrackOverlay').style.opacity = 0+"%";
-        clearNeedleCanvas();
-    }
-
-
-
-});
-
-
-// Interaction with tracker bar:
-
-
-document.getElementById("trackProgress").addEventListener("mouseover", function(event){
-    document.getElementById("trackProgress").style.backgroundColor = "#f7f7f7";
-    inTrackProgressArea = true;
-
-});
-
-document.getElementById("trackProgress").addEventListener("mouseout", function(){
-    document.getElementById("trackProgress").style.backgroundColor = "#E7E7E7";
-    inTrackProgressArea = false;
-});
-
-
-
-// List of tracks and their data
-// time of recording based on hour (0 to 23), mapped to hue value (1 to 360), for background color
-// location = [latitude, longitude], for line color
-// longitude (-180 to +180) mapped to hue (1 to 360)
-// latitude (-90 to +90) mapped to saturation (1 to 100)
 var trackList = [
     {trackID:"SR001F_2.wav", timeOfRecording: '00:00:00', location: [33.812511,-117.918976] },
     {trackID:"animals.wav", timeOfRecording: '06:00:00', location: [66.160507,-153.369141]},
@@ -107,120 +22,94 @@ for (var track of trackList){
 
 }
 
-var timeStamps = []; // for interactive tracking purposes
+
+/* 2). CANVAS API */
+
+// First Layer, expanding contrasting background
+const canvas = document.getElementById('canvas1');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+//  Second Layer, Spiral with noise levels
+const canvasSpiral = document.getElementById('canvasSpiral');
+const ctxSpiral = canvasSpiral.getContext('2d');
+canvasSpiral.width = window.innerWidth;
+canvasSpiral.height = window.innerHeight;
 
 
-// Drop-down selector:
-const trackLibraryDropdown = document.getElementById('trackLibraryDropdown'); 
-var selectedTrack ;
-updateTrack();
+
+// Third Layer, "True Spiral"
+const canvasTrueOverlay = document.getElementById('trueTrackOverlay');
+const ctxTrueOverlay = canvasTrueOverlay.getContext('2d');
+canvasTrueOverlay.width = canvas.width;
+canvasTrueOverlay.height = canvas.height;
 
 
+/* 3). DRAWING PARAMETERS */
 
-// Background Color based on timeOfRecording
+// Background Range Colors based on timeOfRecording
 var hourRange = 23; // 0 - 23 
 var hueRange = 360; // 0 - 360
 
-
-
-// Line Drawing Color based on location
+// Spiral Line Drawing Color based on location
+// note: colors of drawn line are based on saturation, hue, and lightness parameters
+// which are dictated by the track's location
 var lineSaturation = latitudeToSaturation(trackList[0].location[0]);
 var lineHue = longitudeToHue(trackList[0].location[1]);
 var defaultLineHue = lineHue;
 var lineLightness = 50; // default to White 
 
-
 // Background Color based on time
-// update background based on first track on load in
-document.getElementById("canvas1").style.backgroundColor = timeToBackgroundColor(trackList[0].timeOfRecording); 
+document.getElementById("canvas1").style.backgroundColor = timeToBackgroundColor(trackList[0].timeOfRecording); // update background based on first track on load in
 
 
-// Variable line thickness
-var decibelRange = 4; // make lower for thicker lines at higher loudness
+// Variable line thickness and color 
+var decibelRange = 4; // default setting is 4, controls line thickness and color changes as a function of "loudness"
 var lineWidth;
 
 
-
-
-// note: origin starts at top left corner of canvas
+// note: origin starts at top left corner of canvas,
+// To draw a line, each animation frame calls a "draw line function" which uses a start and end point
 // +X = going right, +Y = going down
 
-
-// Line Points (includes offsets): 
+// Line Points (Objects): 
 const pointStart = new Object();
 pointStart.x = canvas.width/2;
 pointStart.y = canvas.height/2;
-
 
 const pointEnd = new Object();
 pointEnd.x = canvas.width/2;
 pointEnd.y = canvas.height/2;
 
-
-// True Line Points:
+// True Line Points (Objects):
 const truePointStart = new Object();
 truePointStart.x = canvas.width/2;
 truePointStart.y = canvas.height/2;
-
 
 const truePointEnd = new Object();
 truePointEnd.x = canvas.width/2;
 truePointEnd.y = canvas.height/2;
 
 // True line Point list(keep track of all points drawn):
-var truePoints = [];    // for drawing purposes only
+var truePoints = [];    
 truePoints[0] = truePointStart;
 
-
-let angle = 0;
-let radius = 0;
-let angleRate = 0.002;   // rate of angle spin
-let radiusRate = 0.003;   // rate of radius growth
-let offset = 0; 
-
-// Set limit of the animation:
-let upperRandomLimit = 50;
-let lowerRandomLimit = -50;
+// Spiral Drawing Animation Parameters: 
+let angle = 0;  // starting angle 
+let radius = 0; // starting radius
+let angleRate = 0.002;   // rate of angle spin 
+let radiusRate = 0.003;   // rate of radius growth 
+let offset = 0; // offset from True line, dependent on loudness of sound
 
 
-// Web Audio API Settings & Parameters:
-let audio1 = new Audio();
-audio1.src = selectedTrack; // LOAD SOUND FILE
+/* 4). CONTROLS & INFORMATION UPDATES  */
 
 
-
-let isPlaying = false;
-
-let audioContext = new (window.AudioContext || window.webkitAudioContext)();
-let audioSource = audioContext.createMediaElementSource(audio1);
-let analyser = audioContext.createAnalyser();
-let volume = audioContext.createGain();
-
-
-var time = 0; // time variable, used for storing points
-var audioDuration; // total duration of track
-
-volume.gain.value = 0.5;   // adjust volume 
-
-audioSource.connect(volume);
-volume.connect(analyser);
-analyser.connect(audioContext.destination);
-
-analyser.fftSize = 64;
-
-
-let bufferLength = analyser.fftSize;
-
-
-let dataArray = new Uint8Array(bufferLength);
-
-
-
-
-
-ctxSpiral.globalAlpha = 1.0; // Spiral line transparency
-
-
+// Drop-down selector of audio tracks
+const trackLibraryDropdown = document.getElementById('trackLibraryDropdown'); 
+var selectedTrack ; // audio of selected track
+updateTrack(); // first time loading into page
 
 
 // Track Library Selection 
@@ -284,7 +173,6 @@ buttonPlay.addEventListener('click',function(){
 
 
 
-
 // Suspend/Resume Button
 const buttonSusRes = document.getElementById('buttonSusRes');
 buttonSusRes.disabled = true;
@@ -316,6 +204,104 @@ buttonReset.addEventListener('click', function(){
     resetAll();
 });
 
+function prevNextButtonDisableCheck(){ // check if the track if is at edges, if true, disable next or prev buttons accordingly
+    
+    if(trackLibraryDropdown.selectedIndex === 0){
+        buttonPrev.disabled = true;
+    }else if(trackLibraryDropdown.selectedIndex !== 0){
+        buttonPrev.disabled = false;
+    }
+    
+    
+    
+    if(trackLibraryDropdown.selectedIndex !== trackLibraryDropdown.options.length-1){
+        buttonNext.disabled = false;
+    }else if(trackLibraryDropdown.selectedIndex === trackLibraryDropdown.options.length-1){
+        buttonNext.disabled = true;
+    }
+}
+
+function updateTrack(){
+    
+
+    selectedTrack = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex].value; // get selected value
+    
+    let latitude = trackList[trackLibraryDropdown.selectedIndex].location[0];
+    let longitude = trackList[trackLibraryDropdown.selectedIndex].location[1];
+
+    document.getElementById("trackInfo").innerHTML = selectedTrack + ", Latitude: " + latitude +", Longitude: " + longitude; // update title based on track 
+    
+    document.getElementById("canvas1").style.backgroundColor = timeToBackgroundColor(trackList[trackLibraryDropdown.selectedIndex].timeOfRecording); 
+
+    lineHue = longitudeToHue(trackList[trackLibraryDropdown.selectedIndex].location[1]);
+    defaultLineHue = lineHue;
+    lineSaturation = latitudeToSaturation(trackList[trackLibraryDropdown.selectedIndex].location[0]);
+    
+}
+
+/* 5). WEB AUDIO API */
+
+let audio1 = new Audio();
+audio1.src = selectedTrack; // LOAD SOUND FILE
+
+let isPlaying = false;
+
+let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let audioSource = audioContext.createMediaElementSource(audio1);
+let analyser = audioContext.createAnalyser();
+let volume = audioContext.createGain();
+
+var time = 0; // time variable, used for storing points
+var audioDuration; // total duration of track
+volume.gain.value = 0.5;   // adjust volume of audio, larger number makes audio louder 
+audioSource.connect(volume);
+volume.connect(analyser);
+analyser.connect(audioContext.destination);
+analyser.fftSize = 64;
+let bufferLength = analyser.fftSize;
+let dataArray = new Uint8Array(bufferLength);
+
+
+var trackProgressRect; // rect for progress of track
+var trackBarRect = document.getElementById('trackBar').getBoundingClientRect(); // rect for just the entire bar
+
+// Get coordinate of Mouse
+var inTrackProgressArea = false;
+
+var mouseX;
+var mouseY;
+
+var barNeedleOffset;
+var barNeedlePercentage; // percent of needle on bar which can be moved
+document.addEventListener("mousemove", function(event){
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+    
+
+
+    if (inTrackProgressArea ===true){
+        
+        barNeedleOffset = event.offsetX;
+        
+        updateBarNeedle();
+        barNeedlePercentage = 100*(event.offsetX)/trackBarRect.width;
+        
+        document.getElementById('trueTrackOverlay').style.opacity = 90+"%";
+
+
+        
+    } else {
+        document.getElementById('trueTrackOverlay').style.opacity = 0+"%";
+        
+    }
+
+
+
+});
+
+/* 6). DRAWING AND ANIMATIONS */
+
+
 // Draw True Line Spiral:
 var trueDrawCounter = 1;
 
@@ -336,10 +322,10 @@ function drawTrueLine(){
 
 // Draw Spiral: 
 function draw(){
-    ctxSpiral.lineWidth = lineWidth;  // line width
+    ctxSpiral.lineWidth = lineWidth;  // line width of Spiral
     ctxSpiral.lineJoin = 'round';
      
-    ctxSpiral.strokeStyle =  'hsl('+lineHue+','+ lineSaturation+'%,'+lineLightness+'%)'; // line stroke color, default 100% Lightness
+    ctxSpiral.strokeStyle =  'hsl('+lineHue+','+ lineSaturation+'%,'+lineLightness+'%)'; // line stroke color
     
     if (editorMode === true){
         ctxSpiral.strokeStyle = lineEditorModeColor; // EDITOR MODE 
@@ -353,37 +339,22 @@ function draw(){
     
 }
 
-// Draw Needle:
 
-var needleTrueX = 400;
-var needleTrueY = 400;
-
-function drawTrueNeedle(){
-
-
-    ctxNeedleOverlay.beginPath()
-    ctxNeedleOverlay.arc(pointStart.x, pointStart.y,5, 0, Math.PI*2);
-    ctxNeedleOverlay.closePath();
-    ctxNeedleOverlay.fill();
-    ctxNeedleOverlay.stroke();
-
-}
 
 // Draw Contrasting Background Cirle:
-
 
 function drawContrastCircle(){
 
     ctx.beginPath()
-    ctx.fillStyle = '#e6e6e6';
-    ctx.strokeStyle = '#e6e6e6';
+    ctx.fillStyle = '#e6e6e6'; // Color of background Circle (infill)
+    ctx.strokeStyle = '#e6e6e6'; // Color of background Circle (border)
     
     if (editorMode === true){
         ctx.fillStyle = contrastCircleColor;
         ctx.strokeStyle = contrastCircleColor;
     }
 
-    ctx.arc(pointStart.x, pointStart.y,15, 0, Math.PI*2);
+    ctx.arc(pointStart.x, pointStart.y,5, 0, Math.PI*2);
     ctx.closePath();
     ctx.fill();
     ctx.stroke(); 
@@ -392,7 +363,6 @@ function drawContrastCircle(){
 
 
 }
-
 
 var tic = 0;
 
@@ -462,15 +432,13 @@ function animate(){
 // Clear Functions for each Canvas Layer:
 function clearCanvas(){    // clear canvas drawings
     ctxSpiral.clearRect(0,0,canvas.width,canvas.height);
-    clearNeedleCanvas();
+
     clearTrueCanvas();
     clearContrastCircle();
     
 }
 
-function clearNeedleCanvas(){
-    ctxNeedleOverlay.clearRect(0,0,canvas.width,canvas.height);
-}
+
 
 function clearTrueCanvas(){
     ctxTrueOverlay.clearRect(0,0,canvas.width,canvas.height);
@@ -527,43 +495,17 @@ function resetAll(){ // clears canvas drawing, reset track, buttons set to defau
     tic = 0;
 }
 
-function prevNextButtonDisableCheck(){ // check if the track if is at edges, if true, disable next or prev buttons accordingly
-    
-    if(trackLibraryDropdown.selectedIndex === 0){
-        buttonPrev.disabled = true;
-    }else if(trackLibraryDropdown.selectedIndex !== 0){
-        buttonPrev.disabled = false;
-    }
-    
-    
-    
-    if(trackLibraryDropdown.selectedIndex !== trackLibraryDropdown.options.length-1){
-        buttonNext.disabled = false;
-    }else if(trackLibraryDropdown.selectedIndex === trackLibraryDropdown.options.length-1){
-        buttonNext.disabled = true;
-    }
-}
 
-function updateTrack(){
-    
 
-    selectedTrack = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex].value; // get selected value
-    
-    let latitude = trackList[trackLibraryDropdown.selectedIndex].location[0];
-    let longitude = trackList[trackLibraryDropdown.selectedIndex].location[1];
 
-    document.getElementById("trackInfo").innerHTML = selectedTrack + ", Latitude: " + latitude +", Longitude: " + longitude; // update title based on track 
-    
-    document.getElementById("canvas1").style.backgroundColor = timeToBackgroundColor(trackList[trackLibraryDropdown.selectedIndex].timeOfRecording); 
+/* 7). MAPPING FUNCTIONS */ 
 
-    lineHue = longitudeToHue(trackList[trackLibraryDropdown.selectedIndex].location[1]);
-    defaultLineHue = lineHue;
-    lineSaturation = latitudeToSaturation(trackList[trackLibraryDropdown.selectedIndex].location[0]);
 
-    
-    
+// time of recording based on hour (0 to 23), mapped to hue value (1 to 360), for background color
+// location = [latitude, longitude], for line color
+// longitude (-180 to +180) mapped to hue (1 to 360)
+// latitude (-90 to +90) mapped to saturation (1 to 100)
 
-}
 
 function timeToBackgroundColor(timeOfRec){
     let mycolor = 'RGB(255,255,255)'; // default white color
@@ -602,6 +544,25 @@ function latitudeToSaturation(latitude){ // convert latitude to saruation value
 
 
 
+/* 8). MISC */
+
+// Interaction with tracker bar:
+
+
+document.getElementById("trackProgress").addEventListener("mouseover", function(event){
+    document.getElementById("trackProgress").style.backgroundColor = "#f7f7f7";
+    inTrackProgressArea = true;
+
+});
+
+document.getElementById("trackProgress").addEventListener("mouseout", function(){
+    document.getElementById("trackProgress").style.backgroundColor = "#E7E7E7";
+    inTrackProgressArea = false;
+});
+
+var timeStamps = []; // for interactive tracking purposes
+
+
 // Color Selectors for Background and Line (Testing Purposes Only):
 
 var colorEditorMode  = true; // CHANGE THIS FALSE IF COLOR PICKER IS NOT USED
@@ -634,12 +595,6 @@ contrastCirclePicker.addEventListener("input", function(selected){
 
 
 
-
-var indexOfTruth = 0;
-
-
-
-
 // Progress Bar Tracker: 
 
 var trackPercentProgress; // real time update based on audio progress 
@@ -667,18 +622,6 @@ function resetBarNeedle(){
     updateBarNeedle();
 }
 
-function needleLinearToRadial(){ // finds the location of the desired seek from linear to radial
-    for(var item of timeStamps){
-        
-        
-        if(item.trackPercent>=barNeedlePercentage){
-            needleTrueX = item.xCoord;
-            needleTrueY = item.yCoord;
-            
-            break;
-        }
-    }
 
-}
 
 
