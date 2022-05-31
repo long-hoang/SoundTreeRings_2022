@@ -1,3 +1,10 @@
+// Version 1: Dynamic Contrast Background Circle
+// Version 2: Static Constract Background 
+
+var version = 1; 
+
+
+
 /* 1). LOAD TRACK LIST INFORMATION */
 // Note1: To add a new audio track, move the audio file into the root file of the application and insert 
 // manually the TrackID, timeOfRecording, and location information into trackList list below
@@ -36,7 +43,6 @@ const canvasSpiral = document.getElementById('canvasSpiral');
 const ctxSpiral = canvasSpiral.getContext('2d');
 canvasSpiral.width = window.innerWidth;
 canvasSpiral.height = window.innerHeight;
-
 
 
 // Third Layer, "True Spiral"
@@ -237,6 +243,11 @@ function updateTrack(){
     defaultLineHue = lineHue;
     lineSaturation = latitudeToSaturation(trackList[trackLibraryDropdown.selectedIndex].location[0]);
     
+    if (version == 2 ){
+        drawContrastCircle();
+    }
+    
+    
 }
 
 /* 5). WEB AUDIO API */
@@ -353,13 +364,18 @@ function drawContrastCircle(){
         ctx.fillStyle = contrastCircleColor;
         ctx.strokeStyle = contrastCircleColor;
     }
+    let backgroundCircleRadius = 5;
+    ctx.arc(pointStart.x, pointStart.y,backgroundCircleRadius, 0, Math.PI*2); // draw dynamic contrast circle
+    
+    if (version == 2){
+        ctx.arc(canvas.width/2,canvas.height/2,400, 0, Math.PI*2); // draw static contrast circle
+    }
 
-    ctx.arc(pointStart.x, pointStart.y,5, 0, Math.PI*2);
+    
+
     ctx.closePath();
     ctx.fill();
     ctx.stroke(); 
-    
-
 
 
 }
