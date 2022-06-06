@@ -8,21 +8,19 @@ body    {
     position: absolute;
     
     
-    top: 5%;
-    left: 2%;
-    width: 95%;
-    height:90%;
-    border-radius: 10px;
+
+    width: 100%;
+    height:100%;
+
     z-index: 1;
 }
 
 #canvasSpiral {
     position: absolute;
-    top: 5%;
-    left: 2%;
-    width: 95%;
-    height:90%;
-    border-radius: 10px;
+
+    width: 100%;
+    height:100%;
+
     z-index: 2;
 
 }
@@ -32,18 +30,55 @@ body    {
 #trueTrackOverlay {
     
     position: absolute;
-    top: 5%;
-    left: 2%;
-    width: 95%;
-    height:90%;
+
+    width: 100%;
+    height:100%;
     z-index:3;
     opacity: 50%;
 }
 
-.button {
-    border-radius: 5px;
-    border-color: black;
+#controlsOverlay {
+    
+    position: fixed;
+    width: 100%;
+    height:100%;
+    z-index:4;
+    opacity: 100%;
+
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    
 }
+
+#previewOverlay {
+    
+    position: fixed;
+
+    z-index:5;
+    opacity: 100%;
+    left: 0%;
+    bottom:0%;
+
+
+}
+
+.button {
+    border-radius: 10px;
+    background-color: #c7c7c7;
+    border: 2px solid black;
+}
+
+.button:hover:enabled{
+    background-color: black; /* Green */
+    color: white;
+}
+.button:active:enabled{
+    background-color: black; /* Green */
+    color: white;
+}
+
 
 .dropdown {
     border-radius: 5px;
@@ -60,25 +95,16 @@ body    {
    
 }
 
-#controlsMid {
-    position:absolute;
-    left: 40%;
 
-}
 
-#trackInfo {
-    position: absolute;
-    bottom: 1%;
-    left: 2%;
-    font-weight: bold;
-    
-}
 
 #trackBar {
+    position: relative;
     width: 350px;
     height: 20px;
-    background-color:  #919191
-    ;
+    background-color:  #919191;
+    left:10%;
+    
 }
 
 #trackProgress {
@@ -105,9 +131,44 @@ body    {
     top:50%;
 }
 
-#controlsBottom {
-    position:absolute;
-    bottom:2%;
-    left: 60%;
+
+
+.col {
+    text-align: center;
+}
+
+#footerControls {
+    position: absolute;
+    bottom: 5%;
+    left: 5%;
+    right: 5%;
 
 }
+
+#trackInfo {
+    color:red;
+    text-align: left;
+}
+
+#logo {
+    position: absolute;
+    color: red;
+    left: 2%;
+}
+
+#aboutButton {
+    position: absolute;
+    right: 5%;
+    color:red;
+    top: 75%
+}
+
+#editorToolButton {
+    color: red;
+}
+
+#topInfo {
+    position: relative;
+    top:50px;
+}
+

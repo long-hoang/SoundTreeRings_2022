@@ -12,14 +12,15 @@ var version = 1;
 // Note3: Time of Recording determines background color 
 
 var trackList = [
-    {trackID:"SR001F_2.wav", timeOfRecording: '00:00:00', location: [33.812511,-117.918976] },
-    {trackID:"animals.wav", timeOfRecording: '06:00:00', location: [66.160507,-153.369141]},
-    {trackID:"waves.mp3",timeOfRecording: '10:00:00', location: [-33.865143,151.209900]},
-    {trackID:"nature.mp3", timeOfRecording: '12:00:00', location: [90, 100]},
-    {trackID:"dawn-early.mp3", timeOfRecording: '06:00:00', location: [90, 30]},
-    {trackID:"daytime.mp3", timeOfRecording: '09:00:00', location: [-20, 30]},
-    {trackID:"lateafternoon.mp3", timeOfRecording: '19:00:00', location: [33.812511,-117.918976]},
-    {trackID:"nighttime.mp3", timeOfRecording: '22:00:00', location: [50, 30]}
+    {trackID:"nighttime.mp3",day: "Jan 9, 2022",  timeOfRecording: '22:00:00', location: [50, 30]},
+    {trackID:"SR001F_2.wav", day: "Jan 2, 2022", timeOfRecording: '00:00:00', location: [33.812511,-117.918976] },
+    {trackID:"animals.wav", day: "Jan 3, 2022", timeOfRecording: '06:00:00', location: [66.160507,-153.369141]},
+    {trackID:"waves.mp3",day: "Jan 4, 2022", timeOfRecording: '10:00:00', location: [-33.865143,151.209900]},
+    {trackID:"nature.mp3",day: "Jan 5, 2022",  timeOfRecording: '12:00:00', location: [90, 100]},
+    {trackID:"dawn-early.mp3",day: "Jan 6, 2022",  timeOfRecording: '06:00:00', location: [90, 30]},
+    {trackID:"daytime.mp3", day: "Jan 7, 2022", timeOfRecording: '09:00:00', location: [-20, 30]},
+    {trackID:"lateafternoon.mp3",day: "Jan 8, 2022",  timeOfRecording: '19:00:00', location: [33.812511,-117.918976]}
+    
 ];
 
 
@@ -112,6 +113,25 @@ let offset = 0; // offset from True line, dependent on loudness of sound
 /* 4). CONTROLS & INFORMATION UPDATES  */
 
 
+// Preview Button (Hide UI Controls)
+var controlsHidden = false;
+const previewButton = document.getElementById('previewButton'); 
+previewButton.addEventListener('click', function(){
+    if(controlsHidden === false){
+        document.getElementById("controlsOverlay").style.opacity= '0%';
+        document.getElementById("previewButton").style.opacity= '50%';
+        controlsHidden = true;
+
+    } else {
+        document.getElementById("controlsOverlay").style.opacity= '100%';
+        document.getElementById("previewButton").style.opacity= '100%';
+        controlsHidden = false;
+    }
+    
+
+});
+
+
 // Drop-down selector of audio tracks
 const trackLibraryDropdown = document.getElementById('trackLibraryDropdown'); 
 var selectedTrack ; // audio of selected track
@@ -157,47 +177,56 @@ buttonNext.addEventListener('click',function(){
 
 prevNextButtonDisableCheck(); // for first instance 
 
+
 // Play Button
 const buttonPlay = document.getElementById('buttonPlay');
 
-
+var newTrack = true;
 
 
 buttonPlay.addEventListener('click',function(){
-    analyser.getByteTimeDomainData(dataArray);  
-    audioContext.resume();
-    isPlaying = true;
-    audio1.play();
-    animate();
-    buttonPlay.disabled = true;
-    buttonSusRes.disabled = false;
-    audioDuration = audio1.duration;
     
+    if(newTrack === true){
+        analyser.getByteTimeDomainData(dataArray);  
+        audioContext.resume();
+        isPlaying = true;
+        audio1.play();
+        
+        buttonPlay.disabled = true;
+        buttonSusRes.disabled = false;
+        audioDuration = audio1.duration;
+        newTrack = false;
+    } else if(audioContext.state === 'suspended') {
+        isPlaying = true;
+        audio1.play();
+        
+        audioContext.resume().then(function() {
+            buttonPlay.disabled = true;
+            buttonSusRes.disabled = false;
+            
+        });
+    }
+    
+    animate();
     
 });
 
 
 
 
-// Suspend/Resume Button
+// Pause Button
 const buttonSusRes = document.getElementById('buttonSusRes');
 buttonSusRes.disabled = true;
 buttonSusRes.addEventListener('click',function(){
     if(audioContext.state === 'running') {
         isPlaying = false;
         audio1.pause(); 
-        
+        buttonPlay.disabled = false;
         audioContext.suspend().then(function() {      
-            buttonSusRes.textContent = 'Resume';
+            buttonPlay.disabled = false;
+            buttonSusRes.disabled = true;
         });
-      } else if(audioContext.state === 'suspended') {
-        isPlaying = true;
-        audio1.play();
-        
-        audioContext.resume().then(function() {
-            buttonSusRes.textContent = 'Pause';
-        });
-    }
+      } 
     
     animate();
     
@@ -234,8 +263,10 @@ function updateTrack(){
     
     let latitude = trackList[trackLibraryDropdown.selectedIndex].location[0];
     let longitude = trackList[trackLibraryDropdown.selectedIndex].location[1];
+    let dayOfRec = trackList[trackLibraryDropdown.selectedIndex].day;
+    let timeOfRec = trackList[trackLibraryDropdown.selectedIndex].timeOfRecording;
 
-    document.getElementById("trackInfo").innerHTML = selectedTrack + ", Latitude: " + latitude +", Longitude: " + longitude; // update title based on track 
+    document.getElementById("trackInfo").innerHTML = selectedTrack + "<br>"+ dayOfRec + " " +timeOfRec +"<br> Latitude: " + latitude +", Longitude: " + longitude; // update title based on track 
     
     document.getElementById("canvas1").style.backgroundColor = timeToBackgroundColor(trackList[trackLibraryDropdown.selectedIndex].timeOfRecording); 
 
@@ -354,16 +385,14 @@ function draw(){
 
 // Draw Contrasting Background Cirle:
 
+
+
 function drawContrastCircle(){
 
     ctx.beginPath()
-    ctx.fillStyle = '#e6e6e6'; // Color of background Circle (infill)
-    ctx.strokeStyle = '#e6e6e6'; // Color of background Circle (border)
+    ctx.fillStyle = contrastCircleColor; // Color of background Circle (infill)
+    ctx.strokeStyle = contrastCircleColor; // Color of background Circle (border)
     
-    if (editorMode === true){
-        ctx.fillStyle = contrastCircleColor;
-        ctx.strokeStyle = contrastCircleColor;
-    }
     let backgroundCircleRadius = 5;
     ctx.arc(pointStart.x, pointStart.y,backgroundCircleRadius, 0, Math.PI*2); // draw dynamic contrast circle
     
@@ -494,7 +523,7 @@ function resetAll(){ // clears canvas drawing, reset track, buttons set to defau
     buttonPlay.disabled = false;
     buttonSusRes.disabled = false;
     
-    buttonSusRes.textContent = 'Pause';
+    
     buttonSusRes.disabled = true;
     resetDrawPoint();
     audio1.load();
@@ -505,7 +534,7 @@ function resetAll(){ // clears canvas drawing, reset track, buttons set to defau
     
     resetBarNeedle();
 
-    
+    newTrack = true;
 
     timeStamps = [];
     tic = 0;
@@ -525,17 +554,36 @@ function resetAll(){ // clears canvas drawing, reset track, buttons set to defau
 
 function timeToBackgroundColor(timeOfRec){
     let mycolor = 'RGB(255,255,255)'; // default white color
+    displayTextColortoBackgroundColor('black');
     if((timeOfRec>='06:00:00')&&(timeOfRec<='07:59:00')){
         mycolor = 'RGB(235,234,234)'; // 6am - 7:59 am (dawn early morning)
+        displayTextColortoBackgroundColor('black');
     } else if((timeOfRec>='18:01:00')&&(timeOfRec<='19:59:00')){
         mycolor = 'RGB(62,60,61)';    // 6:01pm - 7:59pm (late afternoon-early evening)
+        displayTextColortoBackgroundColor('white');
     } else if(((timeOfRec>='20:00:00')&&(timeOfRec<='23:59:00'))||((timeOfRec>='00:00:00')&&(timeOfRec<='05:59:00'))){
         mycolor = 'RGB(0,0,0)';   // 8pm - 5:59 am (nighttime)
+        displayTextColortoBackgroundColor('white');
+  
     }
 
     return mycolor;
 }
 
+function displayTextColortoBackgroundColor(input){
+    if(input === "black"){
+        document.getElementById("editorToolButton").style.color= "black";
+        document.getElementById("logo").style.color= "black";
+        document.getElementById("trackInfo").style.color= "black";
+        document.getElementById("aboutButton").style.color= "black";
+    } else if (input === "white"){
+        document.getElementById("editorToolButton").style.color= "white";
+        document.getElementById("logo").style.color= "white";
+        document.getElementById("trackInfo").style.color= "white";
+        document.getElementById("aboutButton").style.color= "white";
+    }
+
+}
 
 function scaleLineThickness(input){ // controls the line thickness as function of Loudness, takes debiels, makes fraction
     return Math.abs(offset/decibelRange)+1; 
@@ -600,7 +648,7 @@ linePicker.addEventListener("input", function(selected){
 
 });
 
-var contrastCircleColor;
+var contrastCircleColor = '#bfbdbd';
 const contrastCirclePicker = document.getElementById('contrastCirclePicker');
 contrastCirclePicker.addEventListener("input", function(selected){
   
