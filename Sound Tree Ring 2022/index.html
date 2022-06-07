@@ -7,8 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SoundTreeRings</title>
     <link rel="stylesheet" href ="style.css">
-    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <script src="https://unpkg.com/wavesurfer.js@6.2.0/dist/wavesurfer.js"></script>
+    <script src="//unpkg.com/wavesurfer.js/dist/plugin/wavesurfer.cursor.min.js"></script>
 </head>
 <body>
  
@@ -62,7 +63,7 @@
               <div class="col">
                 <select class = "dropdown" id = "trackLibraryDropdown"></select>
               </div>
-              <div class="col">
+              <div class="col" >
                 
                 <div>
                   <button class = "button" id="buttonPrev"> <i class="fa-solid fa-backward"></i> </button>
@@ -75,10 +76,14 @@
                 
                 <br/>
 
-                <div id = "trackBar">
+                
+                  <div id="waveform"></div>
+                
+                
+                <!-- <div id = "trackBar">
                   <div id = "trackBarNeedle"></div>
                   <div id = "trackProgress"></div>
-                </div>
+                </div> -->
                 
               </div>
               <div class="col">

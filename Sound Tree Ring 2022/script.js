@@ -11,7 +11,10 @@ var version = 1;
 // Note2: Location determines line base color, "loudness" determines the thickness and color variation during play
 // Note3: Time of Recording determines background color 
 
+// Note: Please name audio files without spacing
+
 var trackList = [
+    {trackID:"busystreet.mp3",day: "May 12, 2022",  timeOfRecording: '6:30:00', location: [64.2008, 149.4937]},
     {trackID:"nighttime.mp3",day: "Jan 9, 2022",  timeOfRecording: '22:00:00', location: [50, 30]},
     {trackID:"SR001F_2.wav", day: "Jan 2, 2022", timeOfRecording: '00:00:00', location: [33.812511,-117.918976] },
     {trackID:"animals.wav", day: "Jan 3, 2022", timeOfRecording: '06:00:00', location: [66.160507,-153.369141]},
@@ -113,6 +116,31 @@ let offset = 0; // offset from True line, dependent on loudness of sound
 /* 4). CONTROLS & INFORMATION UPDATES  */
 
 
+// Wavesurfer JS 
+
+var wavesurfer = WaveSurfer.create({
+    container: '#waveform',
+    
+    plugins: [
+        WaveSurfer.cursor.create({
+            showTime: true,
+            opacity: 1,
+            color: 'red',
+            customShowTimeStyle: {
+                'background-color': '#000',
+                color: '#fff',
+                padding: '2px',
+                'font-size': '10px'
+            }
+        })
+    ]
+});
+
+wavesurfer.toggleInteraction(); // removes seek ability 
+wavesurfer.setHeight(50);
+wavesurfer.setMute(true);
+
+
 // Preview Button (Hide UI Controls)
 var controlsHidden = false;
 const previewButton = document.getElementById('previewButton'); 
@@ -186,6 +214,8 @@ var newTrack = true;
 
 buttonPlay.addEventListener('click',function(){
     
+    wavesurfer.play();
+
     if(newTrack === true){
         analyser.getByteTimeDomainData(dataArray);  
         audioContext.resume();
@@ -221,6 +251,7 @@ buttonSusRes.addEventListener('click',function(){
     if(audioContext.state === 'running') {
         isPlaying = false;
         audio1.pause(); 
+        wavesurfer.pause();
         buttonPlay.disabled = false;
         audioContext.suspend().then(function() {      
             buttonPlay.disabled = false;
@@ -261,6 +292,8 @@ function updateTrack(){
 
     selectedTrack = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex].value; // get selected value
     
+    wavesurfer.load(selectedTrack);
+
     let latitude = trackList[trackLibraryDropdown.selectedIndex].location[0];
     let longitude = trackList[trackLibraryDropdown.selectedIndex].location[1];
     let dayOfRec = trackList[trackLibraryDropdown.selectedIndex].day;
@@ -304,63 +337,68 @@ let bufferLength = analyser.fftSize;
 let dataArray = new Uint8Array(bufferLength);
 
 
-var trackProgressRect; // rect for progress of track
-var trackBarRect = document.getElementById('trackBar').getBoundingClientRect(); // rect for just the entire bar
+
+
+
+//var trackProgressRect; // rect for progress of track
+//var trackBarRect = document.getElementById('trackBar').getBoundingClientRect(); // rect for just the entire bar
 
 // Get coordinate of Mouse
-var inTrackProgressArea = false;
+// var inTrackProgressArea = false;
 
-var mouseX;
-var mouseY;
+// var mouseX;
+// var mouseY;
 
-var barNeedleOffset;
-var barNeedlePercentage; // percent of needle on bar which can be moved
-document.addEventListener("mousemove", function(event){
-    mouseX = event.clientX;
-    mouseY = event.clientY;
+// var barNeedleOffset;
+// var barNeedlePercentage; // percent of needle on bar which can be moved
+// document.addEventListener("mousemove", function(event){
+//     mouseX = event.clientX;
+//     mouseY = event.clientY;
     
 
 
-    if (inTrackProgressArea ===true){
+//     if (inTrackProgressArea ===true){
         
-        barNeedleOffset = event.offsetX;
+//         barNeedleOffset = event.offsetX;
         
-        updateBarNeedle();
-        barNeedlePercentage = 100*(event.offsetX)/trackBarRect.width;
+//         updateBarNeedle();
+//         barNeedlePercentage = 100*(event.offsetX)/trackBarRect.width;
         
-        document.getElementById('trueTrackOverlay').style.opacity = 90+"%";
+//         document.getElementById('trueTrackOverlay').style.opacity = 90+"%";
 
 
         
-    } else {
-        document.getElementById('trueTrackOverlay').style.opacity = 0+"%";
+//     } else {
+//         document.getElementById('trueTrackOverlay').style.opacity = 0+"%";
         
-    }
+//     }
 
 
 
-});
+// });
+
+
 
 /* 6). DRAWING AND ANIMATIONS */
 
 
 // Draw True Line Spiral:
-var trueDrawCounter = 1;
+// var trueDrawCounter = 1;
 
-function drawTrueLine(){
-    ctxTrueOverlay.lineWidth = 1;  // line width
-    ctxTrueOverlay.lineJoin = 'round';
+// function drawTrueLine(){
+//     ctxTrueOverlay.lineWidth = 1;  // line width
+//     ctxTrueOverlay.lineJoin = 'round';
      
-    ctxTrueOverlay.strokeStyle =  'black'; 
+//     ctxTrueOverlay.strokeStyle =  'black'; 
     
     
-    ctxTrueOverlay.beginPath();
-    ctxTrueOverlay.moveTo(truePointStart.x, truePointStart.y);    // point start
-    ctxTrueOverlay.lineTo(truePointEnd.x, truePointEnd.y);    // point end
-    ctxTrueOverlay.stroke();
+//     ctxTrueOverlay.beginPath();
+//     ctxTrueOverlay.moveTo(truePointStart.x, truePointStart.y);    // point start
+//     ctxTrueOverlay.lineTo(truePointEnd.x, truePointEnd.y);    // point end
+//     ctxTrueOverlay.stroke();
     
     
-}
+// }
 
 // Draw Spiral: 
 function draw(){
@@ -420,10 +458,10 @@ function animate(){
     if((isPlaying === true)&&(audio1.ended===false)){
         
         time = audio1.currentTime;
-        timeStamps[tic] = {t: time, xCoord:truePointStart.x, yCoord: truePointStart.y, trackPercent: trackPercentProgress };
+        // timeStamps[tic] = {t: time, xCoord:truePointStart.x, yCoord: truePointStart.y, trackPercent: trackPercentProgress };
         tic++;
     
-        updateTrackProgress();
+        // updateTrackProgress();
 
 
         for (let i = 0; i<bufferLength; i++){
@@ -435,7 +473,7 @@ function animate(){
             lineHue = scaleLineColorDecibel(offset); // controls the line lightness as function of Loudness
 
             draw();
-            drawTrueLine();
+            // drawTrueLine();
             drawContrastCircle();
             
 
@@ -518,6 +556,9 @@ function resetAll(){ // clears canvas drawing, reset track, buttons set to defau
     isPlaying = false; 
     audioContext.suspend();
     audio1.pause();
+
+    wavesurfer.seekTo(0);
+    wavesurfer.pause();
     
     clearCanvas();
     buttonPlay.disabled = false;
@@ -530,9 +571,9 @@ function resetAll(){ // clears canvas drawing, reset track, buttons set to defau
 
     trueDrawCounter = 0;
     
-    clearTrackProgress();
+    // clearTrackProgress();
     
-    resetBarNeedle();
+    // resetBarNeedle();
 
     newTrack = true;
 
@@ -613,16 +654,16 @@ function latitudeToSaturation(latitude){ // convert latitude to saruation value
 // Interaction with tracker bar:
 
 
-document.getElementById("trackProgress").addEventListener("mouseover", function(event){
-    document.getElementById("trackProgress").style.backgroundColor = "#f7f7f7";
-    inTrackProgressArea = true;
+// document.getElementById("trackProgress").addEventListener("mouseover", function(event){
+//     document.getElementById("trackProgress").style.backgroundColor = "#f7f7f7";
+//     inTrackProgressArea = true;
 
-});
+// });
 
-document.getElementById("trackProgress").addEventListener("mouseout", function(){
-    document.getElementById("trackProgress").style.backgroundColor = "#E7E7E7";
-    inTrackProgressArea = false;
-});
+// document.getElementById("trackProgress").addEventListener("mouseout", function(){
+//     document.getElementById("trackProgress").style.backgroundColor = "#E7E7E7";
+//     inTrackProgressArea = false;
+// });
 
 var timeStamps = []; // for interactive tracking purposes
 
@@ -661,30 +702,30 @@ contrastCirclePicker.addEventListener("input", function(selected){
 
 // Progress Bar Tracker: 
 
-var trackPercentProgress; // real time update based on audio progress 
+// var trackPercentProgress; // real time update based on audio progress 
 
-function updateTrackProgress(){ // update styling 
-    trackPercentProgress = (audio1.currentTime/audioDuration)*100 ;
+// function updateTrackProgress(){ // update styling 
+//     trackPercentProgress = (audio1.currentTime/audioDuration)*100 ;
     
-    document.getElementById("trackProgress").style.width = trackPercentProgress+ "%";
-    trackProgressRect = document.getElementById('trackProgress').getBoundingClientRect();
+//     document.getElementById("trackProgress").style.width = trackPercentProgress+ "%";
+//     trackProgressRect = document.getElementById('trackProgress').getBoundingClientRect();
     
     
-}
+// }
 
-function clearTrackProgress(){
-    trackPercentProgress = 0;
-    document.getElementById("trackProgress").style.width = trackPercentProgress+ "%";
-}
+// function clearTrackProgress(){
+//     trackPercentProgress = 0;
+//     document.getElementById("trackProgress").style.width = trackPercentProgress+ "%";
+// }
 
-function updateBarNeedle(){
-    document.getElementById('trackBarNeedle').style.left = barNeedleOffset + "px";
-}
+// function updateBarNeedle(){
+//     document.getElementById('trackBarNeedle').style.left = barNeedleOffset + "px";
+// }
 
-function resetBarNeedle(){
-    barNeedleOffset = 0;
-    updateBarNeedle();
-}
+// function resetBarNeedle(){
+//     barNeedleOffset = 0;
+//     updateBarNeedle();
+// }
 
 
 
