@@ -58,8 +58,8 @@ body    {
 
     z-index:5;
     opacity: 100%;
-    left: 0%;
-    bottom:0%;
+    right: 15%;
+    top:1%;
 
 
 }
@@ -147,7 +147,7 @@ body    {
 
 #trackInfo {
     color:red;
-    text-align: left;
+    text-align: center;
 }
 
 #logo {
