@@ -34,6 +34,9 @@ for (var track of trackList){
 }
 
 
+
+
+
 /* 2). CANVAS API */
 
 // First Layer, expanding contrasting background
@@ -108,8 +111,8 @@ truePoints[0] = truePointStart;
 // Spiral Drawing Animation Parameters: 
 let angle = 0;  // starting angle 
 let radius = 0; // starting radius
-let angleRate = 0.002;   // rate of angle spin 
-let radiusRate = 0.003;   // rate of radius growth 
+let angleRate = 0.002;   // rate of angle spin (default 0.002)
+let radiusRate = 0.003;   // rate of radius growth  (0.003)
 let offset = 0; // offset from True line, dependent on loudness of sound
 
 
@@ -118,8 +121,20 @@ let offset = 0; // offset from True line, dependent on loudness of sound
 
 // Wavesurfer JS 
 
-var wavesurfer = WaveSurfer.create({
+var waveform = document.getElementById("waveform");
+
+var wavesurfer;
+var audioDuration; // total duration of track
+
+wavesurfer = WaveSurfer.create({
     container: '#waveform',
+    waveColor: '#e0e0e0',
+    progressColor: '#292929',
+    fillParent: true,
+    scrollParent: true,
+    responsive: true,
+    
+    
     
     plugins: [
         WaveSurfer.cursor.create({
@@ -137,25 +152,50 @@ var wavesurfer = WaveSurfer.create({
 });
 
 wavesurfer.toggleInteraction(); // removes seek ability 
-wavesurfer.setHeight(50);
+wavesurfer.setHeight(60);
 wavesurfer.setMute(true);
+wavesurfer.play();
+wavesurfer.pause();
+
+
+
+
+
+
+wavesurfer.on('ready', function(){
+    audioDuration = audio1.duration;
+    console.log(audioDuration);
+    updateWaveformWidth();
+    
+    wavesurfer.toggleScroll();
+    
+    if (wavesurfer.params.scrollParent === true){
+        wavesurfer.toggleScroll();
+    }
+    console.log(wavesurfer.params.scrollParent);
+});
+
+
+
 
 
 // Preview Button (Hide UI Controls)
 var controlsHidden = false;
-const previewButton = document.getElementById('previewButton'); 
+const previewButton = document.getElementById('previewButton');
+const previewIcon = document.getElementById('previewIcon'); 
 previewButton.addEventListener('click', function(){
+    
     if(controlsHidden === false){
         document.getElementById("controlsOverlay").style.opacity= '0%';
-        document.getElementById("previewButton").style.opacity= '50%';
         controlsHidden = true;
-
+        previewIcon.classList.remove("fa-eye");
+        previewIcon.classList.add("fa-eye-slash");
     } else {
         document.getElementById("controlsOverlay").style.opacity= '100%';
-        document.getElementById("previewButton").style.opacity= '100%';
         controlsHidden = false;
+        previewIcon.classList.remove("fa-eye-slash");
+        previewIcon.classList.add("fa-eye");
     }
-    
 
 });
 
@@ -163,6 +203,11 @@ previewButton.addEventListener('click', function(){
 // Drop-down selector of audio tracks
 const trackLibraryDropdown = document.getElementById('trackLibraryDropdown'); 
 var selectedTrack ; // audio of selected track
+let audio1 = new Audio();
+audio1.src = trackList[0].trackID; // LOAD SOUND FILE
+
+
+
 updateTrack(); // first time loading into page
 
 
@@ -214,7 +259,9 @@ var newTrack = true;
 
 buttonPlay.addEventListener('click',function(){
     
+    
     wavesurfer.play();
+    
 
     if(newTrack === true){
         analyser.getByteTimeDomainData(dataArray);  
@@ -224,7 +271,6 @@ buttonPlay.addEventListener('click',function(){
         
         buttonPlay.disabled = true;
         buttonSusRes.disabled = false;
-        audioDuration = audio1.duration;
         newTrack = false;
     } else if(audioContext.state === 'suspended') {
         isPlaying = true;
@@ -292,14 +338,20 @@ function updateTrack(){
 
     selectedTrack = trackLibraryDropdown.options[trackLibraryDropdown.selectedIndex].value; // get selected value
     
+    audioDuration = audio1.duration;
+    updateWaveformWidth();
     wavesurfer.load(selectedTrack);
+    
+    
+
+    
 
     let latitude = trackList[trackLibraryDropdown.selectedIndex].location[0];
     let longitude = trackList[trackLibraryDropdown.selectedIndex].location[1];
     let dayOfRec = trackList[trackLibraryDropdown.selectedIndex].day;
     let timeOfRec = trackList[trackLibraryDropdown.selectedIndex].timeOfRecording;
 
-    document.getElementById("trackInfo").innerHTML = selectedTrack + "<br>"+ dayOfRec + " " +timeOfRec +"<br> Latitude: " + latitude +", Longitude: " + longitude; // update title based on track 
+    document.getElementById("trackInfo").innerHTML = selectedTrack + "<br>"+ dayOfRec + " " +timeOfRec +"<br> Latitude: " + latitude +", Longitude: " + longitude ; // update title based on track 
     
     document.getElementById("canvas1").style.backgroundColor = timeToBackgroundColor(trackList[trackLibraryDropdown.selectedIndex].timeOfRecording); 
 
@@ -307,19 +359,19 @@ function updateTrack(){
     defaultLineHue = lineHue;
     lineSaturation = latitudeToSaturation(trackList[trackLibraryDropdown.selectedIndex].location[0]);
     
+
     if (version == 2 ){
         drawContrastCircle();
     }
-    
+
     
 }
 
 /* 5). WEB AUDIO API */
 
-let audio1 = new Audio();
-audio1.src = selectedTrack; // LOAD SOUND FILE
 
 let isPlaying = false;
+
 
 let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let audioSource = audioContext.createMediaElementSource(audio1);
@@ -327,7 +379,7 @@ let analyser = audioContext.createAnalyser();
 let volume = audioContext.createGain();
 
 var time = 0; // time variable, used for storing points
-var audioDuration; // total duration of track
+
 volume.gain.value = 0.5;   // adjust volume of audio, larger number makes audio louder 
 audioSource.connect(volume);
 volume.connect(analyser);
@@ -339,66 +391,9 @@ let dataArray = new Uint8Array(bufferLength);
 
 
 
-
-//var trackProgressRect; // rect for progress of track
-//var trackBarRect = document.getElementById('trackBar').getBoundingClientRect(); // rect for just the entire bar
-
-// Get coordinate of Mouse
-// var inTrackProgressArea = false;
-
-// var mouseX;
-// var mouseY;
-
-// var barNeedleOffset;
-// var barNeedlePercentage; // percent of needle on bar which can be moved
-// document.addEventListener("mousemove", function(event){
-//     mouseX = event.clientX;
-//     mouseY = event.clientY;
-    
-
-
-//     if (inTrackProgressArea ===true){
-        
-//         barNeedleOffset = event.offsetX;
-        
-//         updateBarNeedle();
-//         barNeedlePercentage = 100*(event.offsetX)/trackBarRect.width;
-        
-//         document.getElementById('trueTrackOverlay').style.opacity = 90+"%";
-
-
-        
-//     } else {
-//         document.getElementById('trueTrackOverlay').style.opacity = 0+"%";
-        
-//     }
-
-
-
-// });
-
-
-
 /* 6). DRAWING AND ANIMATIONS */
 
 
-// Draw True Line Spiral:
-// var trueDrawCounter = 1;
-
-// function drawTrueLine(){
-//     ctxTrueOverlay.lineWidth = 1;  // line width
-//     ctxTrueOverlay.lineJoin = 'round';
-     
-//     ctxTrueOverlay.strokeStyle =  'black'; 
-    
-    
-//     ctxTrueOverlay.beginPath();
-//     ctxTrueOverlay.moveTo(truePointStart.x, truePointStart.y);    // point start
-//     ctxTrueOverlay.lineTo(truePointEnd.x, truePointEnd.y);    // point end
-//     ctxTrueOverlay.stroke();
-    
-    
-// }
 
 // Draw Spiral: 
 function draw(){
@@ -559,6 +554,8 @@ function resetAll(){ // clears canvas drawing, reset track, buttons set to defau
 
     wavesurfer.seekTo(0);
     wavesurfer.pause();
+
+    
     
     clearCanvas();
     buttonPlay.disabled = false;
@@ -569,11 +566,12 @@ function resetAll(){ // clears canvas drawing, reset track, buttons set to defau
     resetDrawPoint();
     audio1.load();
 
+    
+
+
     trueDrawCounter = 0;
     
-    // clearTrackProgress();
-    
-    // resetBarNeedle();
+
 
     newTrack = true;
 
@@ -649,21 +647,9 @@ function latitudeToSaturation(latitude){ // convert latitude to saruation value
 
 
 
+
 /* 8). MISC */
 
-// Interaction with tracker bar:
-
-
-// document.getElementById("trackProgress").addEventListener("mouseover", function(event){
-//     document.getElementById("trackProgress").style.backgroundColor = "#f7f7f7";
-//     inTrackProgressArea = true;
-
-// });
-
-// document.getElementById("trackProgress").addEventListener("mouseout", function(){
-//     document.getElementById("trackProgress").style.backgroundColor = "#E7E7E7";
-//     inTrackProgressArea = false;
-// });
 
 var timeStamps = []; // for interactive tracking purposes
 
@@ -698,34 +684,26 @@ contrastCirclePicker.addEventListener("input", function(selected){
 
 });
 
+function durationToWidth(input){ // convert duration of audio to width of waveform in percentage
+    let upperMaxDuration = 90;  // max duration in seconds, for scaling purposes, max = 100% 
+
+    if (input>=upperMaxDuration){
+        return 100;
+    } else {
+        return 100.0*(input/upperMaxDuration);
+    }
 
 
-// Progress Bar Tracker: 
+}
 
-// var trackPercentProgress; // real time update based on audio progress 
+function updateWaveformWidth(){
+    waveform.style.setProperty('--waveWidth', durationToWidth(audioDuration)+"%");
+}
 
-// function updateTrackProgress(){ // update styling 
-//     trackPercentProgress = (audio1.currentTime/audioDuration)*100 ;
-    
-//     document.getElementById("trackProgress").style.width = trackPercentProgress+ "%";
-//     trackProgressRect = document.getElementById('trackProgress').getBoundingClientRect();
-    
-    
-// }
 
-// function clearTrackProgress(){
-//     trackPercentProgress = 0;
-//     document.getElementById("trackProgress").style.width = trackPercentProgress+ "%";
-// }
 
-// function updateBarNeedle(){
-//     document.getElementById('trackBarNeedle').style.left = barNeedleOffset + "px";
-// }
 
-// function resetBarNeedle(){
-//     barNeedleOffset = 0;
-//     updateBarNeedle();
-// }
+
 
 
 
