@@ -33,9 +33,46 @@ for (var track of trackList){
 
 }
 
+// Wavesurfer JS 
+
+var waveform = document.getElementById("waveform");
+
+var wavesurfer;
+var audioDuration; // total duration of track
+
+wavesurfer = WaveSurfer.create({
+    container: '#waveform',
+    waveColor: '#e0e0e0',
+    progressColor: '#292929',
+    fillParent: true,
+    scrollParent: true,
+    responsive: true,
+    
+    
+    
+    plugins: [
+        WaveSurfer.cursor.create({
+            showTime: true,
+            opacity: 1,
+            color: 'red',
+            customShowTimeStyle: {
+                'background-color': '#000',
+                color: '#fff',
+                padding: '2px',
+                'font-size': '10px'
+            }
+        })
+    ]
+});
+
+wavesurfer.toggleInteraction(); // removes seek ability 
+wavesurfer.setHeight(60);
+wavesurfer.setMute(true);
+wavesurfer.play();
+wavesurfer.pause();
 
 
-
+const previewButton = document.getElementById('previewButton');
 
 /* 2). CANVAS API */
 
@@ -119,43 +156,6 @@ let offset = 0; // offset from True line, dependent on loudness of sound
 /* 4). CONTROLS & INFORMATION UPDATES  */
 
 
-// Wavesurfer JS 
-
-var waveform = document.getElementById("waveform");
-
-var wavesurfer;
-var audioDuration; // total duration of track
-
-wavesurfer = WaveSurfer.create({
-    container: '#waveform',
-    waveColor: '#e0e0e0',
-    progressColor: '#292929',
-    fillParent: true,
-    scrollParent: true,
-    responsive: true,
-    
-    
-    
-    plugins: [
-        WaveSurfer.cursor.create({
-            showTime: true,
-            opacity: 1,
-            color: 'red',
-            customShowTimeStyle: {
-                'background-color': '#000',
-                color: '#fff',
-                padding: '2px',
-                'font-size': '10px'
-            }
-        })
-    ]
-});
-
-wavesurfer.toggleInteraction(); // removes seek ability 
-wavesurfer.setHeight(60);
-wavesurfer.setMute(true);
-wavesurfer.play();
-wavesurfer.pause();
 
 
 
@@ -164,7 +164,7 @@ wavesurfer.pause();
 
 wavesurfer.on('ready', function(){
     audioDuration = audio1.duration;
-    console.log(audioDuration);
+    
     updateWaveformWidth();
     
     wavesurfer.toggleScroll();
@@ -172,7 +172,7 @@ wavesurfer.on('ready', function(){
     if (wavesurfer.params.scrollParent === true){
         wavesurfer.toggleScroll();
     }
-    console.log(wavesurfer.params.scrollParent);
+    
 });
 
 
@@ -181,7 +181,7 @@ wavesurfer.on('ready', function(){
 
 // Preview Button (Hide UI Controls)
 var controlsHidden = false;
-const previewButton = document.getElementById('previewButton');
+
 const previewIcon = document.getElementById('previewIcon'); 
 previewButton.addEventListener('click', function(){
     
@@ -615,11 +615,17 @@ function displayTextColortoBackgroundColor(input){
         document.getElementById("logo").style.color= "black";
         document.getElementById("trackInfo").style.color= "black";
         document.getElementById("aboutButton").style.color= "black";
+        previewButton.style.color = "black";
+        wavesurfer.setProgressColor('#292929');
+        wavesurfer.setWaveColor('#e0e0e0');
     } else if (input === "white"){
         document.getElementById("editorToolButton").style.color= "white";
         document.getElementById("logo").style.color= "white";
         document.getElementById("trackInfo").style.color= "white";
         document.getElementById("aboutButton").style.color= "white";
+        previewButton.style.color = "white";
+        wavesurfer.setProgressColor('#e0e0e0');
+        wavesurfer.setWaveColor('#292929');
     }
 
 }

@@ -80,8 +80,9 @@ body    {
 }
 
 
-.dropdown {
+ul.dropdown ul{
     border-radius: 5px;
+    bottom:100%;
   
 }
 
@@ -181,4 +182,8 @@ body    {
     width: var(--waveWidth);
     left: calc(50% - 0.5*var(--waveWidth));
 
+}
+
+#previewButton {
+    color: black;
 }
