@@ -50,19 +50,19 @@ wavesurfer = WaveSurfer.create({
     
     
     
-    plugins: [
-        WaveSurfer.cursor.create({
-            showTime: true,
-            opacity: 1,
-            color: 'red',
-            customShowTimeStyle: {
-                'background-color': '#000',
-                color: '#fff',
-                padding: '2px',
-                'font-size': '10px'
-            }
-        })
-    ]
+    // plugins: [
+    //     WaveSurfer.cursor.create({
+    //         showTime: true,
+    //         opacity: 1,
+    //         color: 'red',
+    //         customShowTimeStyle: {
+    //             'background-color': '#000',
+    //             color: '#fff',
+    //             padding: '2px',
+    //             'font-size': '10px'
+    //         }
+    //     })
+    // ]
 });
 
 wavesurfer.toggleInteraction(); // removes seek ability 
